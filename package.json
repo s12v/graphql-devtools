@@ -16,6 +16,7 @@
     "path": "^0.12.7",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
+    "react-table": "^6.7.4",
     "webpack": "^3.8.1",
     "webpack-dev-server": "^2.9.3"
   },

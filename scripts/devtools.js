@@ -1,1 +1,10 @@
-chrome.devtools.panels.create("MyGraphQL", "assets/images/toolbarIcon.png", "dist/index.html");
+chrome.devtools.panels.create(
+    "MyGraphQL",
+    "",
+    "dist/index.html",
+    panel => {
+        panel.onShown.addListener(panelWindow => {
+            panelWindow.panelCreated(chrome.devtools);
+        })
+    }
+);

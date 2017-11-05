@@ -14,22 +14,32 @@ module.exports = {
         filename: 'index_bundle.js'
     },
     module: {
-        rules: [{
-            test: /\.scss$/,
-            use: [{
-                loader: "style-loader" // creates style nodes from JS strings
-            }, {
-                loader: "css-loader" // translates CSS into CommonJS
-            }, {
-                loader: "sass-loader" // compiles Sass to CSS
-            }]
-        },
+        rules: [
             {
-                test: /\.jsx$/,
+                test: /\.(scss|css)$/,
+                use: [
+                    {
+                        loader: "style-loader"
+                    },
+                    {
+                        loader: "css-loader"
+                    },
+                    {
+                        loader: "sass-loader"
+                    }
+                ]
+            },
+            {
+                test: /\.(jsx|js)$/,
                 loader: 'babel-loader',
                 exclude: /node_modules/
             }
         ]
     },
-    plugins: [HtmlWebpackPluginConfig]
+    plugins: [HtmlWebpackPluginConfig],
+    resolve: {
+        extensions: [
+            ".js", ".jsx"
+        ]
+    }
 };

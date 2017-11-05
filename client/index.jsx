@@ -1,8 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import App from './components/App.jsx';
+import Table from './components/Table';
+import './styles/main.scss';
 
-import './styles/app.scss';
+window.panelCreated = function (devtools) {
 
-ReactDOM.render(<App />, document.getElementById('root'));
+    // TODO register listeners
+
+    console.log(devtools);
+
+    ReactDOM.render(<Table/>, document.getElementById('root'));
+};
