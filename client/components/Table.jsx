@@ -5,26 +5,33 @@ import 'react-table/react-table.css'
 import './styles/table.scss';
 
 export default class Table extends React.Component {
-    constructor() {
-        super();
+
+    constructor(props) {
+        super(props);
         this.state = {
-            data: [
-                {
-                    query: 'MyQuery',
-                    test: "foo",
-                },
-
-                {
-                    query: '-',
-                    test: "bar",
-                },
-
-            ]
+            data: []
         };
     }
 
+    componentDidMount() {
+        this.props.onRequestFinished.addListener(this.handleRequest.bind(this));
+    }
+
+    handleRequest(request) {
+        this.setState(
+            prevState => {
+                return {
+                    data: [...prevState.data, {
+                        query: request.request.url,
+                        test: request.request.httpVersion,
+                    }]
+                }
+            }
+        )
+    }
+
     render() {
-        const { data } = this.state;
+        const {data} = this.state;
         const columns = [{
             Header: 'Query',
             accessor: 'query'

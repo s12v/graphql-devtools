@@ -10,5 +10,7 @@ window.panelCreated = function (devtools) {
 
     console.log(devtools);
 
-    ReactDOM.render(<Table/>, document.getElementById('root'));
+    const table = <Table onRequestFinished={chrome.devtools.network.onRequestFinished}/>;
+
+    ReactDOM.render(table, document.getElementById('root'));
 };
