@@ -3,3 +3,15 @@ body {
   margin: 0;
   padding: 0;
 }
+
+.flex-container {
+  display: flex;
+
+  .left {
+    flex: 1 1 60%;
+  }
+  .right {
+    display: none;
+    flex: 1 1 40%;
+  }
+}

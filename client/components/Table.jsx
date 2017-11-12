@@ -47,6 +47,20 @@ export default class Table extends React.Component {
             sortable={false}
             data={data}
             columns={columns}
+            minRows={0}
+
+            getTdProps={(state, rowInfo, column, instance) => {
+                return {
+                    onClick: (e, handleOriginal) => {
+                        console.log(this.props.data[rowInfo.index]);
+
+                        if (handleOriginal) {
+                            handleOriginal()
+                        }
+                    }
+                }
+            }}
+
         />
     }
 }
