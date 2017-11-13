@@ -1,16 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import Table from './components/Table';
+import App from './components/App';
 import './styles/main.scss';
 
+/**
+ * @param devtools chrome.devtools
+ */
 window.panelCreated = function (devtools) {
 
-    // TODO register listeners
-
-    console.log(devtools);
-
-    const table = <Table onRequestFinished={chrome.devtools.network.onRequestFinished}/>;
-
-    ReactDOM.render(table, document.getElementById('table'));
+    ReactDOM.render(
+        <App
+            onRequestFinished={devtools.network.onRequestFinished}
+        />,
+        document.getElementById('root')
+    );
 };

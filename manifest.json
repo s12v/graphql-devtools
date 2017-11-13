@@ -14,8 +14,8 @@
     "https://*/*"
   ],
   "icons": {
-     "16": "assets/images/graphql_16x16.png",
-     "48": "assets/images/graphql_48x48.png",
-    "128": "assets/images/graphql_128x128.png"
+     "16": "images/graphql_16x16.png",
+     "48": "images/graphql_48x48.png",
+    "128": "images/graphql_128x128.png"
   }
 }

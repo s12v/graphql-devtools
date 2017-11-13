@@ -14,7 +14,9 @@ export default class Table extends React.Component {
     }
 
     componentDidMount() {
-        this.props.onRequestFinished.addListener(this.handleRequest.bind(this));
+        if (typeof this.props.onRequestFinished !== 'undefined') {
+            this.props.onRequestFinished.addListener(this.handleRequest.bind(this));
+        }
     }
 
     handleRequest(request) {
@@ -22,6 +24,7 @@ export default class Table extends React.Component {
             prevState => {
                 return {
                     data: [...prevState.data, {
+                        request: request,
                         query: request.request.url,
                         test: request.request.httpVersion,
                     }]
@@ -48,12 +51,12 @@ export default class Table extends React.Component {
             data={data}
             columns={columns}
             minRows={0}
-
             getTdProps={(state, rowInfo, column, instance) => {
                 return {
                     onClick: (e, handleOriginal) => {
-                        console.log(this.props.data[rowInfo.index]);
-
+                        if (this.props.onClick) {
+                            this.props.onClick(state.data[rowInfo.index].request);
+                        }
                         if (handleOriginal) {
                             handleOriginal()
                         }
