@@ -10,19 +10,26 @@ export default class HarUtils {
 
     static isContentType(har, contentType) {
         const lowercaseContentType = contentType.toLowerCase();
-        har.request.headers.some(header => {
+        return har.request.headers.some(header => {
             return header.name.toLowerCase() === 'content-type'
                 && header.value.split(';')[0].toLowerCase() === lowercaseContentType
         })
     }
 
-    static isGraphQLRequest(har) {
+    static getGraphQLQuery(har) {
+        if (!this.isJson(har)) {
+            return false;
+        }
+
         try {
-            return this.isJson(har) && JSON.parse(this.postData(har)).query;
+            const data = JSON.parse(this.postData(har));
+            if (data.hasOwnProperty('query')) {
+                return data.query;
+            }
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
         }
-        return false
+        return null;
     }
 }

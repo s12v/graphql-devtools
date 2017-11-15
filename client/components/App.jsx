@@ -23,10 +23,11 @@ export default class App extends React.Component {
     onRowClick(har) {
         console.log(har);
 
-        if (HarUtils.isGraphQLRequest(har)) {
+        const query = HarUtils.getGraphQLQuery(har);
+        if (query !== null) {
             console.log("this is graphql!");
             this.setState(prevState => {
-                    return {query: 'query {graphQLHub}'}
+                    return {query: query}
                 }
             );
         } else {
