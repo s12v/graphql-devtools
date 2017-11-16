@@ -1,6 +1,6 @@
+import HarUtils from "../services/HarUtils";
 import React from 'react';
 import ReactTable from "react-table";
-
 import 'react-table/react-table.css'
 import './styles/table.scss';
 
@@ -19,14 +19,18 @@ export default class Table extends React.Component {
         }
     }
 
-    handleRequest(request) {
+    handleRequest(har) {
+        if (!HarUtils.getGraphQLQuery(har)) {
+            return;
+        }
+
         this.setState(
             prevState => {
                 return {
                     data: [...prevState.data, {
-                        request: request,
-                        query: request.request.url,
-                        test: request.request.httpVersion,
+                        har: har,
+                        query: har.request.url,
+                        test: har.request.httpVersion,
                     }]
                 }
             }
@@ -55,7 +59,7 @@ export default class Table extends React.Component {
                 return {
                     onClick: (e, handleOriginal) => {
                         if (this.props.onClick) {
-                            this.props.onClick(state.data[rowInfo.index].request);
+                            this.props.onClick(state.data[rowInfo.index].har);
                         }
                         if (handleOriginal) {
                             handleOriginal()
