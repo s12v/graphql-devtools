@@ -4,11 +4,6 @@
   "manifest_version": 2,
   "description": "Devtools panel for GraphQL development",
   "devtools_page": "devtools.html",
-  "background": {
-    "scripts": [
-      "scripts/background.js"
-    ]
-  },
   "permissions": [
     "http://*/*",
     "https://*/*"
