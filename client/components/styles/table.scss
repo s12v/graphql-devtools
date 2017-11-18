@@ -380,8 +380,7 @@
   pointer-events: none;
 }
 
-//GT
-.ReactTable .-loading div {
+.ReactTable .-loading > div {
   position: absolute;
   display: block;
   text-align: center;
@@ -401,8 +400,7 @@
   pointer-events: all;
 }
 
-//GT
-.ReactTable .-loading.-active div {
+.ReactTable .-loading.-active > div {
   transform: translateY(50%)
 }
 
