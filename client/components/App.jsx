@@ -9,7 +9,7 @@ import {githubGist} from 'react-syntax-highlighter/styles/hljs';
 
 registerLanguage('json', json);
 
-import 'react-tabs/style/react-tabs.scss';
+import './styles/react-tabs.scss';
 import './styles/app.scss';
 
 
@@ -19,7 +19,8 @@ export default class App extends React.Component {
         super(props);
         this.state = {
             query: 'query {graphQLHub}',
-            response: ''
+            response: '',
+            showRight: false
         };
     }
 
@@ -49,7 +50,8 @@ export default class App extends React.Component {
             console.log("this is graphql!");
             this.setState(() => {
                     return {
-                        query: query
+                        query: query,
+                        showRight: true
                     }
                 }
             );
@@ -57,6 +59,19 @@ export default class App extends React.Component {
         } else {
             console.log("this is NOT graphql!");
         }
+    }
+
+    closeRight() {
+        this.setState(() => {
+                return {
+                    showRight: false
+                }
+            }
+        );
+    }
+
+    static hidden(isHidden) {
+        return isHidden ? 'hide' : '';
     }
 
     render() {
@@ -67,7 +82,8 @@ export default class App extends React.Component {
                     onClick={this.onRowClick.bind(this)}
                 />
             </div>
-            <div className="right">
+            <div className={`right ${App.hidden(!this.state.showRight)}`}>
+                <div className="close" onClick={this.closeRight.bind(this)}></div>
                 <Tabs>
                     <TabList>
                         <Tab>Query</Tab>
@@ -88,4 +104,4 @@ export default class App extends React.Component {
             </div>
         </div>;
     }
-}
+};

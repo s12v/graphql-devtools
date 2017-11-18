@@ -1,7 +1,7 @@
 import HarUtils from "../services/HarUtils";
 import React from 'react';
 import ReactTable from "react-table";
-import 'react-table/react-table.css'
+import formatBytes from "../services/FormatBytes"
 import './styles/table.scss';
 
 export default class Table extends React.Component {
@@ -29,8 +29,10 @@ export default class Table extends React.Component {
                 return {
                     data: [...prevState.data, {
                         har: har,
-                        query: har.request.url,
-                        test: har.request.httpVersion,
+                        url: har.request.url,
+                        status: har.response.status,
+                        size: har.response.content.size,
+                        time: har.time,
                     }]
                 }
             }
@@ -39,19 +41,34 @@ export default class Table extends React.Component {
 
     render() {
         const {data} = this.state;
-        const columns = [{
-            Header: 'Query',
-            accessor: 'query'
-        }, {
-            Header: 'Hm',
-            accessor: 'test',
-            //Cell: props => <span className='number'>{props.value}</span> // Custom cell components!
-        }];
+        const columns = [
+            {
+                Header: 'URL',
+                accessor: 'url'
+            },
+            {
+                Header: 'Status',
+                accessor: 'status',
+                maxWidth: 100,
+            },
+            {
+                Header: 'Size',
+                accessor: 'size',
+                maxWidth: 100,
+                Cell: props => <span>{formatBytes(props.value)}</span>
+            },
+            {
+                Header: 'Time',
+                accessor: 'time',
+                maxWidth: 100,
+                Cell: props => <span>{Math.round(props.value)}&nbsp;ms</span>
+            }
+        ];
 
         return <ReactTable
             className="-striped -highlight"
             showPagination={false}
-            sortable={false}
+            sortable={true}
             data={data}
             columns={columns}
             minRows={0}

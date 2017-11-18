@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-
 import App from './components/App';
+import fake_devtools from './test/InBrowser.js';
 import './styles/main.scss';
 
 /**
@@ -16,3 +16,8 @@ window.panelCreated = function (devtools) {
         document.getElementById('root')
     );
 };
+
+
+if (chrome && typeof chrome.devtools === 'undefined') {
+    panelCreated(fake_devtools);
+}

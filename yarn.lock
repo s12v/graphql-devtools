@@ -3817,9 +3817,9 @@ pretty-error@^2.0.2:
     renderkid "^2.0.1"
     utila "~0.4"
 
-"prism-themes@git+https://github.com/PrismJS/prism-themes.git#afb4116547cd854074ad705b8171768403ca11f3":
+"prism-themes@https://github.com/PrismJS/prism-themes.git#afb4116547cd854074ad705b8171768403ca11f3":
   version "1.0.0"
-  resolved "git+https://github.com/PrismJS/prism-themes.git#afb4116547cd854074ad705b8171768403ca11f3"
+  resolved "https://github.com/PrismJS/prism-themes.git#afb4116547cd854074ad705b8171768403ca11f3"
 
 prismjs@^1.8.4, prismjs@~1.8.0:
   version "1.8.4"
