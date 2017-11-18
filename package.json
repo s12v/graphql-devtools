@@ -8,7 +8,7 @@
   "scripts": {
     "build": "webpack -p",
     "start": "webpack-dev-server",
-    "test": "./node_modules/mocha/bin/mocha test/*.js --require babel-register --reporter spec client/test"
+    "test": "./node_modules/mocha/bin/mocha --require babel-register --reporter spec client/test"
   },
   "watch": [
     "{client}/**/*.jsx"
