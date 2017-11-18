@@ -2,13 +2,16 @@ language: node_js
 node_js:
 - 7.4.0
 cache: yarn
-build:
+script:
+- yarn test
 - yarn build
+before_deploy:
 - yarn package
 deploy:
   provider: releases
   api_key:
     secure: R18AIPpxTN/ymSz6nr239cg5PHonnDu7eW07IewxzzSdWn7NOn4I9x0qGiJG2Nbpn5N2yKgEgjDUuTrhyD9AF/CsOKPtCfJnSWuUSSCxNttEPZ++QLrJwlNoFRimVaQ2HGW6mqg5alKAsSGaQ40/Xq838HQWWxtr2XJ2ecuRcoW3FDF11Dlq3BMEr9rliL78NeGyTdVMYiW5H7B2nqDfWzaFG/dFs8ER2uOA96mnxQasEAHl58IuiEw5dlt9BWLapMXuOsBuWDbPDsVvsGD8vDQfyRlq/uFmpOYQ+9ivZiWJ5PeM0h1qk8uV2YE+rSzqIyQGw4qxWtHo0TSwJaD7HXhQA9wPVj6SVLeMJNFrorz5bipCBNB5j846udxF0Vk8PQczXIu9cQFfzaQptPoPhd47fnaKr/2lCs3zaF4TiufCeOKDOQQIP0mT98FdlHC/Y5mX9Fnp9DLx+HXAFEir1qrieqCaCfsfIRM72CmAVsYeHSdckDQVJoc9uSwzlfv5HQlaQ/f1jr3DEOiqe8SdPppO+EN57v9JlB7IWTpWqCKmdss1Zy/C6KLo2W3my0m2heEsguMk3rT74peFgp3fW8g+qQBWM4TYbwr1bMlx58sgQY8Ytd8b6nX932ALGri/s30jQo4b+wXOxqep8Lq4WDRZKs9ES5Z2bq+9np45Tiw=
   file: extension.zip
+  skip_cleanup: true
   on:
-    repo: s12v/graphql-devtools
+    tags: true
