@@ -28,7 +28,6 @@ describe('HarUtils', () => {
     it('should return GraphQL query', () => {
         let har = harWithHeader({}, 'content-type', 'application/json');
         har = harWithPostData(har, '{"query": "{}"}');
-        console.log(har);
         expect(HarUtils.getGraphQLQuery(har)).to.equal('{}');
     });
 
