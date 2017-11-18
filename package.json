@@ -1,6 +1,6 @@
 {
   "name": "graphql-devtools",
-  "version": "1.0.0",
+  "version": "0.0.1-SNAPSHOT",
   "main": "index.js",
   "repository": "git@bitbucket.org:snov/graphql-devtools.git",
   "author": "Sergey Novikov <snov@snov.me>",

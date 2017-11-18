@@ -9,7 +9,8 @@ export default class Table extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: []
+            data: [],
+            selectedIndex: -1
         };
     }
 
@@ -17,6 +18,15 @@ export default class Table extends React.Component {
         if (typeof this.props.onRequestFinished !== 'undefined') {
             this.props.onRequestFinished.addListener(this.handleRequest.bind(this));
         }
+    }
+
+
+    resetSelection() {
+        this.setState(() => {
+            return {
+                selectedIndex: -1
+            }
+        });
     }
 
     handleRequest(har) {
@@ -72,9 +82,28 @@ export default class Table extends React.Component {
             data={data}
             columns={columns}
             minRows={0}
+            getTrProps={(state, rowInfo, column) => {
+                console.log(rowInfo);
+                console.log("rowInfo.row.index: " + rowInfo.index);
+                console.log("selectedIndex: " + this.state.selectedIndex);
+                if (rowInfo.index === this.state.selectedIndex) {
+                    return {
+                        style: {
+                            background: '#ddeeff'
+                        }
+                    }
+                } else {
+                    return {}
+                }
+            }}
             getTdProps={(state, rowInfo, column, instance) => {
                 return {
                     onClick: (e, handleOriginal) => {
+                        this.setState(() => {
+                            return {
+                                selectedIndex: rowInfo.index
+                            }
+                        });
                         if (this.props.onClick) {
                             this.props.onClick(state.data[rowInfo.index].har);
                         }

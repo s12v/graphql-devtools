@@ -47,7 +47,6 @@ export default class App extends React.Component {
 
         const query = HarUtils.getGraphQLQuery(har);
         if (query !== null) {
-            console.log("this is graphql!");
             this.setState(() => {
                     return {
                         query: query,
@@ -61,13 +60,14 @@ export default class App extends React.Component {
         }
     }
 
-    closeRight() {
+    onRightPanelClose() {
         this.setState(() => {
                 return {
                     showRight: false
                 }
             }
         );
+        this.table.resetSelection();
     }
 
     static hidden(isHidden) {
@@ -80,10 +80,11 @@ export default class App extends React.Component {
                 <Table
                     onRequestFinished={this.props.onRequestFinished}
                     onClick={this.onRowClick.bind(this)}
+                    ref={(component) => { this.table = component; }}
                 />
             </div>
             <div className={`right ${App.hidden(!this.state.showRight)}`}>
-                <div className="close" onClick={this.closeRight.bind(this)}></div>
+                <div className="close" onClick={this.onRightPanelClose.bind(this)}></div>
                 <Tabs>
                     <TabList>
                         <Tab>Query</Tab>
