@@ -41,7 +41,6 @@ export default class App extends React.Component {
     }
 
     onRowClick(har) {
-        console.log(har);
         const query = HarUtils.getGraphQLQuery(har);
         if (query !== null && typeof query.query !== 'undefined') {
             this.setState(() => {
