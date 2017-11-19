@@ -10,6 +10,10 @@ describe('HarUtils', () => {
         expect(HarUtils.postData(har)).to.be.equal('aaa');
     });
 
+    it('should return empty postData on invalid har', () => {
+        expect(HarUtils.postData({})).to.be.equal('');
+    });
+
     it('should detect JSON', () => {
         const har = harWithHeader({}, 'content-type', 'application/json');
         expect(HarUtils.isJson(har)).to.equal(true);
@@ -33,8 +37,8 @@ describe('HarUtils', () => {
 
     it('should return GraphQL variables', () => {
         let har = harWithHeader({}, 'content-type', 'application/json');
-        har = harWithPostData(har, '{"variables": "{}"}');
-        expect(HarUtils.getGraphQLQuery(har).variables).to.equal('{}');
+        har = harWithPostData(har, '{"variables": "{\\"a\\": \\"b\\"}"}');
+        expect(HarUtils.getGraphQLQuery(har).variables).to.deep.equal({a: "b"});
     });
 
 

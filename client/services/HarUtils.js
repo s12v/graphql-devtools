@@ -1,7 +1,9 @@
 export default class HarUtils {
 
     static postData(har) {
-        return har.request.postData.text;
+        return har.hasOwnProperty('request')
+        && har.request.hasOwnProperty('postData')
+        && har.request.postData.hasOwnProperty('text') ? har.request.postData.text : '';
     }
 
     static isJson(har) {
@@ -16,25 +18,33 @@ export default class HarUtils {
         })
     }
 
+    static parseVariables(jsonString) {
+        try {
+            return JSON.parse(jsonString);
+        } catch (e) {
+            if (e instanceof SyntaxError) {
+            } else throw e
+        }
+        return {};
+    }
+
     static getGraphQLQuery(har) {
-        if (!this.isJson(har)) {
+        if (this.isJson(har)) {
             return {};
         }
 
-        let query = {};
         try {
             const data = JSON.parse(this.postData(har));
-            console.log(data);
             if (data.hasOwnProperty('query')) {
-                query = Object.assign(query, {query: data.query});
-            }
-            if (data.hasOwnProperty('variables')) {
-                query = Object.assign(query, {variables: data.variables});
+                return {
+                    query: data.query,
+                    variables: data.hasOwnProperty('variables') ? this.parseVariables(data.variables) : {}
+                };
             }
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
         }
-        return query;
+        return {};
     }
 }

@@ -14,7 +14,7 @@ export default {
                                 }
                             ],
                             postData: {
-                                text: '{"query": "query {foo}", "variables": {"a": "b"}}'
+                                text: '{"query": "query {foo}", "variables": "{\\"a\\": \\"b\\"}"}'
                             }
                         },
                         response: {
@@ -24,12 +24,12 @@ export default {
                             }
                         },
                         time: 448.23,
-                        getContent: () => {
-                            return '{\n' +
+                        getContent: (fun) => {
+                            fun('{\n' +
                                 '  "data": {\n' +
                                 '    "graphQLHub": "Foo bar"\n' +
                                 '  }\n' +
-                                '}';
+                                '}');
                         }
                     }
                 )

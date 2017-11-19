@@ -42,10 +42,9 @@ export default class App extends React.Component {
         const query = HarUtils.getGraphQLQuery(har);
         if (query !== null && typeof query.query !== 'undefined') {
             this.setState(() => {
-                console.log(query);
-                    return {
+                return {
                         query: query.query,
-                        variables: JSON.stringify(query.variables, null, 2) || '{}',
+                        variables: JSON.stringify(query.variables, null, 2),
                         showRight: true
                     }
                 }
@@ -74,7 +73,9 @@ export default class App extends React.Component {
                 <Table
                     onRequestFinished={this.props.onRequestFinished}
                     onClick={this.onRowClick.bind(this)}
-                    ref={(component) => { this.table = component; }}
+                    ref={(component) => {
+                        this.table = component;
+                    }}
                 />
             </div>
             <div className={`right ${App.hidden(!this.state.showRight)}`}>
