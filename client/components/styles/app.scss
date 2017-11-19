@@ -20,6 +20,11 @@ $border-color: #cdcdcd;
     flex: 1 1 80%;
     overflow: auto;
     border-left: 1px solid $border-color;
+
+    .errorBoundary {
+      padding: 5px;
+      font-size: 12px;
+    }
   }
 }
 

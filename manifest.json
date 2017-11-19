@@ -1,6 +1,6 @@
 {
   "name": "GraphQL developer tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "manifest_version": 2,
   "description": "Devtools panel for GraphQL development",
   "devtools_page": "devtools.html",

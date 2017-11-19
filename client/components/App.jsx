@@ -26,44 +26,49 @@ export default class App extends React.Component {
             response: '',
             showRight: false
         };
+        this.errorBoundaries = new Set();
+        this.table = null;
     }
 
     onContentLoaded(content) {
         try {
             const prettyJson = JSON.stringify(JSON.parse(content), null, 2);
-            this.setState(prevState => Object.assign(prevState, {
-                response: prettyJson
-            }));
+            this.setState({response: prettyJson});
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
         }
     }
 
+    resetErrorBoundaries() {
+        this.errorBoundaries.forEach(errorBoundary => {
+            if (errorBoundary !== null && typeof errorBoundary.reset === 'function') {
+                errorBoundary.reset();
+            }
+        });
+    }
+
     onRowClick(har) {
+        this.resetErrorBoundaries();
         const query = HarUtils.getGraphQLQuery(har);
         if (query !== null && typeof query.query !== 'undefined') {
-            this.setState(() => {
-                    return {
-                        har: har,
-                        query: query.query,
-                        variables: JSON.stringify(query.variables, null, 2),
-                        showRight: true
-                    }
-                }
-            );
+            this.setState({
+                har: har,
+                query: query.query,
+                variables: JSON.stringify(query.variables, null, 2),
+                showRight: true
+            });
             har.getContent(this.onContentLoaded.bind(this));
         }
     }
 
     onRightPanelClose() {
-        this.setState(() => {
-                return {
-                    showRight: false
-                }
-            }
-        );
-        this.table.resetSelection();
+        this.setState({
+            showRight: false
+        });
+        if (this.table) {
+            this.table.resetSelection();
+        }
     }
 
     static hidden(isHidden) {
@@ -91,23 +96,29 @@ export default class App extends React.Component {
                         <Tab>Details</Tab>
                     </TabList>
                     <TabPanel>
-                        <GraphqlCodeBlock
-                            className="GraphqlCodeBlock"
-                            queryBody={this.state.query}
-                        />
+                        <ErrorBoundary ref={eb => this.errorBoundaries.add(eb)}>
+                            <GraphqlCodeBlock
+                                className="GraphqlCodeBlock"
+                                queryBody={this.state.query}
+                            />
+                        </ErrorBoundary>
                     </TabPanel>
                     <TabPanel>
-                        <SyntaxHighlighter style={githubGist} language="json">
-                            {this.state.variables}
-                        </SyntaxHighlighter>
+                        <ErrorBoundary ref={eb => this.errorBoundaries.add(eb)}>
+                            <SyntaxHighlighter style={githubGist} language="json">
+                                {this.state.variables}
+                            </SyntaxHighlighter>
+                        </ErrorBoundary>
                     </TabPanel>
                     <TabPanel>
-                        <SyntaxHighlighter style={githubGist} language="json">
-                            {this.state.response}
-                        </SyntaxHighlighter>
+                        <ErrorBoundary ref={eb => this.errorBoundaries.add(eb)}>
+                            <SyntaxHighlighter style={githubGist} language="json">
+                                {this.state.response}
+                            </SyntaxHighlighter>
+                        </ErrorBoundary>
                     </TabPanel>
                     <TabPanel>
-                        <ErrorBoundary>
+                        <ErrorBoundary ref={eb => this.errorBoundaries.add(eb)}>
                             <HarDetails har={this.state.har}/>
                         </ErrorBoundary>
                     </TabPanel>
