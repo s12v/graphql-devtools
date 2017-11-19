@@ -1,0 +1,23 @@
+$border-color: #e1e1e1;
+
+.HarDetails {
+  font-size: 12px;
+  color: #333;
+  padding: 5px 5px;
+
+  .groupHeader, .subGroupHeader {
+    font-weight: bold;
+  }
+
+  .groupContainer {
+    padding: 5px 10px;
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 5px;
+    line-height: 140%;
+  }
+
+  .subgroupContainer {
+    padding: 3px 10px;
+    line-height: 130%;
+  }
+}

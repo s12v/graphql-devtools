@@ -83,15 +83,15 @@ export default class Table extends React.Component {
             columns={columns}
             minRows={0}
             getTrProps={(state, rowInfo, column) => {
+                let style = {};
                 if (rowInfo.index === this.state.selectedIndex) {
-                    return {
-                        style: {
-                            background: '#ddeeff'
-                        }
-                    }
-                } else {
-                    return {}
+                    Object.assign(style, {background: '#ddeeff'});
                 }
+                if (rowInfo.row.status >= 400) {
+                    Object.assign(style, {color: 'red'});
+                }
+
+                return style ? {style: style} : {};
             }}
             getTdProps={(state, rowInfo, column, instance) => {
                 return {

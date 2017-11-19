@@ -13,15 +13,22 @@ export default {
                                     value: 'application/json'
                                 }
                             ],
+                            method: 'POST',
                             postData: {
                                 text: '{"query": "query {foo}", "variables": "{\\"a\\": \\"b\\"}"}'
                             }
                         },
                         response: {
-                            status: 200,
                             content: {
                                 size: 478
-                            }
+                            },
+                            headers: [
+                                {
+                                    name: 'content-type',
+                                    value: 'application/json'
+                                }
+                            ],
+                            status: 200,
                         },
                         time: 448.23,
                         getContent: (fun) => {

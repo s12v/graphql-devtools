@@ -1,5 +1,5 @@
 chrome.devtools.panels.create(
-    "MyGraphQL",
+    "GraphQL",
     "",
     "dist/index.html",
     panel => {

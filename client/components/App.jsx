@@ -1,5 +1,7 @@
 import React from 'react';
+import ErrorBoundary from './ErrorBoundary';
 import Table from './Table';
+import HarDetails from './HarDetails';
 import HarUtils from '../services/HarUtils';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import {GraphqlCodeBlock} from 'graphql-syntax-highlighter-react';
@@ -18,6 +20,7 @@ export default class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            har: null,
             query: 'query {graphQLHub}',
             variables: '{}',
             response: '',
@@ -42,7 +45,8 @@ export default class App extends React.Component {
         const query = HarUtils.getGraphQLQuery(har);
         if (query !== null && typeof query.query !== 'undefined') {
             this.setState(() => {
-                return {
+                    return {
+                        har: har,
                         query: query.query,
                         variables: JSON.stringify(query.variables, null, 2),
                         showRight: true
@@ -85,6 +89,7 @@ export default class App extends React.Component {
                         <Tab>Query</Tab>
                         <Tab>Variables</Tab>
                         <Tab>Response</Tab>
+                        <Tab>Details</Tab>
                     </TabList>
                     <TabPanel>
                         <GraphqlCodeBlock
@@ -101,6 +106,11 @@ export default class App extends React.Component {
                         <SyntaxHighlighter style={githubGist} language="json">
                             {this.state.response}
                         </SyntaxHighlighter>
+                    </TabPanel>
+                    <TabPanel>
+                        <ErrorBoundary>
+                            <HarDetails har={this.state.har}/>
+                        </ErrorBoundary>
                     </TabPanel>
                 </Tabs>
             </div>
