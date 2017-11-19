@@ -28,6 +28,11 @@ export default class HarUtils {
         return {};
     }
 
+    static isGraphQLQuery(har) {
+        const query = this.getGraphQLQuery(har);
+        return query.hasOwnProperty('query');
+    }
+
     static getGraphQLQuery(har) {
         if (!this.isJson(har)) {
             return {};

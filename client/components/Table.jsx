@@ -30,7 +30,7 @@ export default class Table extends React.Component {
     }
 
     handleRequest(har) {
-        if (!HarUtils.getGraphQLQuery(har)) {
+        if (!HarUtils.isGraphQLQuery(har)) {
             return;
         }
 

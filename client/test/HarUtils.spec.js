@@ -29,6 +29,17 @@ describe('HarUtils', () => {
         expect(HarUtils.isJson(har)).to.equal(false);
     });
 
+    it('should detect a GraphQL query', () => {
+        let har = harWithHeader({}, 'content-type', 'application/json');
+        har = harWithPostData(har, '{"query": "{}"}');
+        expect(HarUtils.isGraphQLQuery(har)).to.equal(true);
+    });
+
+    it('should detect not a GraphQL query', () => {
+        let har = harWithHeader({}, 'content-type', 'application/json');
+        expect(HarUtils.isGraphQLQuery(har)).to.equal(false);
+    });
+
     it('should return GraphQL query', () => {
         let har = harWithHeader({}, 'content-type', 'application/json');
         har = harWithPostData(har, '{"query": "{}"}');
