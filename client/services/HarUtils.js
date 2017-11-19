@@ -29,7 +29,7 @@ export default class HarUtils {
     }
 
     static getGraphQLQuery(har) {
-        if (this.isJson(har)) {
+        if (!this.isJson(har)) {
             return {};
         }
 

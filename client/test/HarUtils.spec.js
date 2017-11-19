@@ -37,7 +37,7 @@ describe('HarUtils', () => {
 
     it('should return GraphQL variables', () => {
         let har = harWithHeader({}, 'content-type', 'application/json');
-        har = harWithPostData(har, '{"variables": "{\\"a\\": \\"b\\"}"}');
+        har = harWithPostData(har, '{"query": "{}", "variables": "{\\"a\\": \\"b\\"}"}');
         expect(HarUtils.getGraphQLQuery(har).variables).to.deep.equal({a: "b"});
     });
 
