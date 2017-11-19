@@ -18,18 +18,23 @@ export default class HarUtils {
 
     static getGraphQLQuery(har) {
         if (!this.isJson(har)) {
-            return false;
+            return {};
         }
 
+        let query = {};
         try {
             const data = JSON.parse(this.postData(har));
+            console.log(data);
             if (data.hasOwnProperty('query')) {
-                return data.query;
+                query = Object.assign(query, {query: data.query});
+            }
+            if (data.hasOwnProperty('variables')) {
+                query = Object.assign(query, {variables: data.variables});
             }
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
         }
-        return null;
+        return query;
     }
 }

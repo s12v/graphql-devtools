@@ -83,9 +83,6 @@ export default class Table extends React.Component {
             columns={columns}
             minRows={0}
             getTrProps={(state, rowInfo, column) => {
-                console.log(rowInfo);
-                console.log("rowInfo.row.index: " + rowInfo.index);
-                console.log("selectedIndex: " + this.state.selectedIndex);
                 if (rowInfo.index === this.state.selectedIndex) {
                     return {
                         style: {

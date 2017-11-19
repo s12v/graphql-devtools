@@ -19,15 +19,10 @@ export default class App extends React.Component {
         super(props);
         this.state = {
             query: 'query {graphQLHub}',
+            variables: '{}',
             response: '',
             showRight: false
         };
-    }
-
-    componentDidMount() {
-        // if (typeof this.props.onRequestFinished !== 'undefined') {
-        //     this.props.onRequestFinished.addListener(this.handleRequest.bind(this));
-        // }
     }
 
     onContentLoaded(content) {
@@ -44,19 +39,18 @@ export default class App extends React.Component {
 
     onRowClick(har) {
         console.log(har);
-
         const query = HarUtils.getGraphQLQuery(har);
-        if (query !== null) {
+        if (query !== null && typeof query.query !== 'undefined') {
             this.setState(() => {
+                console.log(query);
                     return {
-                        query: query,
+                        query: query.query,
+                        variables: JSON.stringify(query.variables, null, 2) || '{}',
                         showRight: true
                     }
                 }
             );
             har.getContent(this.onContentLoaded.bind(this));
-        } else {
-            console.log("this is NOT graphql!");
         }
     }
 
@@ -88,6 +82,7 @@ export default class App extends React.Component {
                 <Tabs>
                     <TabList>
                         <Tab>Query</Tab>
+                        <Tab>Variables</Tab>
                         <Tab>Response</Tab>
                     </TabList>
                     <TabPanel>
@@ -95,6 +90,11 @@ export default class App extends React.Component {
                             className="GraphqlCodeBlock"
                             queryBody={this.state.query}
                         />
+                    </TabPanel>
+                    <TabPanel>
+                        <SyntaxHighlighter style={githubGist} language="json">
+                            {this.state.variables}
+                        </SyntaxHighlighter>
                     </TabPanel>
                     <TabPanel>
                         <SyntaxHighlighter style={githubGist} language="json">

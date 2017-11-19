@@ -14,7 +14,7 @@ export default {
                                 }
                             ],
                             postData: {
-                                text: '{"query": "query {foo}"}'
+                                text: '{"query": "query {foo}", "variables": {"a": "b"}}'
                             }
                         },
                         response: {
