@@ -20,7 +20,7 @@ export default class HarUtils {
 
     static parseVariables(jsonStringOrObject) {
         try {
-            return 'string' === typeof jsonStringOrObject ? JSON.parse(jsonStringOrObject) : jsonStringOrObject;
+            return 'object' === typeof jsonStringOrObject ? jsonStringOrObject : JSON.parse(jsonStringOrObject);
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
