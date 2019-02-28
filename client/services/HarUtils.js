@@ -28,28 +28,34 @@ export default class HarUtils {
         return {};
     }
 
-    static isGraphQLQuery(har) {
-        const query = this.getGraphQLQuery(har);
-        return query.hasOwnProperty('query');
-    }
-
-    static getGraphQLQuery(har) {
+    static getGraphQLQueries(har) {
         if (!this.isJson(har)) {
-            return {};
+            return []
         }
 
         try {
-            const data = JSON.parse(this.postData(har));
-            if (data.hasOwnProperty('query')) {
-                return {
-                    query: data.query,
-                    variables: data.hasOwnProperty('variables') ? this.parseVariables(data.variables) : {}
-                };
-            }
+            let data = this.postData(har)
+            data = typeof data === 'string' ? data.replace(/\r?\n|\r/g, '') : data;
+            data = typeof data === 'string' ? JSON.parse(data) : data;
+            data = Array.isArray(data) ? data : [data]
+            let queries = [];
+
+            data.forEach(query => {
+                if (query.hasOwnProperty('query')) {
+                    queries.push({
+                        query: query.query,
+                        operation: query.operationName,
+                        variables: query.hasOwnProperty('variables') ? this.parseVariables(query.variables) : {}
+                    });
+                }
+            })
+
+            return queries;
+
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
         }
-        return {};
+        return []
     }
 }

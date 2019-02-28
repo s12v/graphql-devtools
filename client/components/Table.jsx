@@ -30,20 +30,37 @@ export default class Table extends React.Component {
     }
 
     handleRequest(har) {
-        if (!HarUtils.isGraphQLQuery(har)) {
-            return;
+        const queries = HarUtils.getGraphQLQueries(har);
+        
+        if (queries === []) {
+          return;
         }
+
+        const items = [];
+
+        queries.forEach((query, pos) => {
+            const getContent = har.getContent;
+            const newHar = JSON.parse(JSON.stringify(har))
+            newHar.getContent = getContent;
+            newHar.request.postData.text = query;
+            newHar.operationIndex = pos;
+
+            const item = {
+                har: newHar,
+                operation: query.operation,
+                url: har.request.url,
+                status: har.response.status,
+                size: har.response.content.size,
+                time: har.time,
+            }
+
+            items.push(item);
+        });
 
         this.setState(
             prevState => {
                 return {
-                    data: [...prevState.data, {
-                        har: har,
-                        url: har.request.url,
-                        status: har.response.status,
-                        size: har.response.content.size,
-                        time: har.time,
-                    }]
+                    data: [...prevState.data, ...items]
                 }
             }
         )
@@ -55,6 +72,10 @@ export default class Table extends React.Component {
             {
                 Header: 'URL',
                 accessor: 'url'
+            },
+            {
+                Header: 'Operation',
+                accessor: 'operation'
             },
             {
                 Header: 'Status',

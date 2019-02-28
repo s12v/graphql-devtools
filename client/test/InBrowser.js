@@ -15,7 +15,8 @@ export default {
                             ],
                             method: 'POST',
                             postData: {
-                                text: '{"query": "query {foo}", "variables": "{\\"a\\": \\"b\\"}"}'
+                              text: '[{"operationName":"one","variables":{ "one": "foo" },"query":"query one { foo }"}, {"operationName":"two","variables":{ "two": "bar" },"query":"query two { foo }"} ]'
+                              // text: '{"query": "query {foo}", "variables": "{\\"a\\": \\"b\\"}"}'
                             }
                         },
                         response: {
@@ -32,11 +33,25 @@ export default {
                         },
                         time: 448.23,
                         getContent: (fun) => {
-                            fun('{\n' +
+                            // fun('{\n' +
+                            //     '  "data": {\n' +
+                            //     '    "graphQLHub": "Foo bar"\n' +
+                            //     '  }\n' +
+                            //     '}');
+
+                            fun('[' +
+                                '{\n' +
                                 '  "data": {\n' +
-                                '    "graphQLHub": "Foo bar"\n' +
+                                '    "one": "This is one!"\n' +
                                 '  }\n' +
-                                '}');
+                                '},'+
+                                '{\n' +
+                                '  "data": {\n' +
+                                '    "two": "This is two!"\n' +
+                                '  }\n' +
+                                '}'+
+                                ']');
+
                         }
                     }
                 )

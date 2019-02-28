@@ -30,9 +30,15 @@ export default class App extends React.Component {
         this.table = null;
     }
 
-    onContentLoaded(content) {
+    onContentLoaded(index, content) {
         try {
-            const prettyJson = JSON.stringify(JSON.parse(content), null, 2);
+            let prettyJson;
+            const data = JSON.parse(content);
+            if (Array.isArray(data)) {
+              prettyJson = JSON.stringify(data[index], null, 2);
+            } else {
+              prettyJson = JSON.stringify(data, null, 2);
+            }
             this.setState({response: prettyJson});
         } catch (e) {
             if (e instanceof SyntaxError) {
@@ -50,7 +56,7 @@ export default class App extends React.Component {
 
     onRowClick(har) {
         this.resetErrorBoundaries();
-        const query = HarUtils.getGraphQLQuery(har);
+        const query = HarUtils.getGraphQLQueries(har)[0];
         if (query !== null && typeof query.query !== 'undefined') {
             this.setState({
                 har: har,
@@ -58,7 +64,7 @@ export default class App extends React.Component {
                 variables: JSON.stringify(query.variables, null, 2),
                 showRight: true
             });
-            har.getContent(this.onContentLoaded.bind(this));
+            har.getContent(this.onContentLoaded.bind(this, har.operationIndex));
         }
     }
 

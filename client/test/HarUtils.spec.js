@@ -29,27 +29,26 @@ describe('HarUtils', () => {
         expect(HarUtils.isJson(har)).to.equal(false);
     });
 
-    it('should detect a GraphQL query', () => {
+    it('should return single GraphQL query', () => {
         let har = harWithHeader({}, 'content-type', 'application/json');
         har = harWithPostData(har, '{"query": "{}"}');
-        expect(HarUtils.isGraphQLQuery(har)).to.equal(true);
+        expect(HarUtils.getGraphQLQueries(har)).to.deep.equal([ { query: '{}', operation: undefined, variables: {} } ]);
     });
 
-    it('should detect not a GraphQL query', () => {
+    it('should not pickup a non GraphQL query', () => {
         let har = harWithHeader({}, 'content-type', 'application/json');
-        expect(HarUtils.isGraphQLQuery(har)).to.equal(false);
+        expect(HarUtils.getGraphQLQueries(har)).to.deep.equal([]);
     });
 
-    it('should return GraphQL query', () => {
+    it('should return GraphQL query with multiple operations', () => {
+        const query = '[{"operationName": "one", "variables":{},"query":"query testOne {\n one \n} }\n"}, {"operationName": "two", "variables":{},"query":"query testTwo {\n two \n} }\n"}]'
         let har = harWithHeader({}, 'content-type', 'application/json');
-        har = harWithPostData(har, '{"query": "{}"}');
-        expect(HarUtils.getGraphQLQuery(har).query).to.equal('{}');
-    });
-
-    it('should return GraphQL variables', () => {
-        let har = harWithHeader({}, 'content-type', 'application/json');
-        har = harWithPostData(har, '{"query": "{}", "variables": "{\\"a\\": \\"b\\"}"}');
-        expect(HarUtils.getGraphQLQuery(har).variables).to.deep.equal({a: "b"});
+        har = harWithPostData(har, query);
+        expect(HarUtils.getGraphQLQueries(har)).to.deep.equal([
+          { query: 'query testOne { one } }', operation: 'one', variables: {} },
+          { query: 'query testTwo { two } }', operation: 'two', variables: {} }
+        ]
+      );
     });
 
 
