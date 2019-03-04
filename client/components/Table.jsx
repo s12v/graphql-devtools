@@ -3,6 +3,7 @@ import React from 'react';
 import ReactTable from "react-table";
 import formatBytes from "../services/FormatBytes"
 import './styles/table.scss';
+import { FaBan, FaGripLinesVertical } from 'react-icons/fa';
 
 export default class Table extends React.Component {
 
@@ -12,6 +13,16 @@ export default class Table extends React.Component {
             data: [],
             selectedIndex: -1
         };
+    }
+   
+    clearTable () {
+      this.setState(
+          prevState => {
+              return {
+                  data: []
+              }
+          }
+      )
     }
 
     componentDidMount() {
@@ -70,7 +81,11 @@ export default class Table extends React.Component {
         const {data} = this.state;
         const columns = [
             {
-                Header: 'URL',
+                Header: () => (
+                  <span>
+                    <FaBan onClick={this.clearTable.bind(this)}/>  &nbsp;&nbsp; URL
+                  </span>
+                ),
                 accessor: 'url'
             },
             {
@@ -96,7 +111,8 @@ export default class Table extends React.Component {
             }
         ];
 
-        return <ReactTable
+        return <div>
+          <ReactTable
             className="-striped -highlight"
             showPagination={false}
             sortable={true}
@@ -131,7 +147,7 @@ export default class Table extends React.Component {
                     }
                 }
             }}
-
         />
+      </div>
     }
 }
