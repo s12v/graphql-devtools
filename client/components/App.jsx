@@ -5,11 +5,10 @@ import HarDetails from './HarDetails';
 import HarUtils from '../services/HarUtils';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
 import {GraphqlCodeBlock} from 'graphql-syntax-highlighter-react';
-import SyntaxHighlighter, {registerLanguage} from "react-syntax-highlighter/light"
 import json from 'react-syntax-highlighter/languages/hljs/json';
 import {githubGist} from 'react-syntax-highlighter/styles/hljs';
+import ReactJson from 'react-json-view'
 
-registerLanguage('json', json);
 
 import './styles/react-tabs.scss';
 import './styles/app.scss';
@@ -22,8 +21,8 @@ export default class App extends React.Component {
         this.state = {
             har: null,
             query: 'query {graphQLHub}',
-            variables: '{}',
-            response: '',
+            variables: {},
+            response: {},
             showRight: false
         };
         this.errorBoundaries = new Set();
@@ -32,14 +31,9 @@ export default class App extends React.Component {
 
     onContentLoaded(index, content) {
         try {
-            let prettyJson;
             const data = JSON.parse(content);
-            if (Array.isArray(data)) {
-              prettyJson = JSON.stringify(data[index], null, 2);
-            } else {
-              prettyJson = JSON.stringify(data, null, 2);
-            }
-            this.setState({response: prettyJson});
+            const response = Array.isArray(data) ? data[index] : data;
+            this.setState({response: response});
         } catch (e) {
             if (e instanceof SyntaxError) {
             } else throw e
@@ -61,7 +55,7 @@ export default class App extends React.Component {
             this.setState({
                 har: har,
                 query: query.query,
-                variables: JSON.stringify(query.variables, null, 2),
+                variables: query.variables,
                 showRight: true
             });
             har.getContent(this.onContentLoaded.bind(this, har.operationIndex));
@@ -111,16 +105,12 @@ export default class App extends React.Component {
                     </TabPanel>
                     <TabPanel>
                         <ErrorBoundary ref={eb => this.errorBoundaries.add(eb)}>
-                            <SyntaxHighlighter style={githubGist} language="json">
-                                {this.state.variables}
-                            </SyntaxHighlighter>
+                            <ReactJson name={null} src={this.state.variables} />
                         </ErrorBoundary>
                     </TabPanel>
                     <TabPanel>
                         <ErrorBoundary ref={eb => this.errorBoundaries.add(eb)}>
-                            <SyntaxHighlighter style={githubGist} language="json">
-                                {this.state.response}
-                            </SyntaxHighlighter>
+                            <ReactJson name={null} src={this.state.response} />
                         </ErrorBoundary>
                     </TabPanel>
                     <TabPanel>

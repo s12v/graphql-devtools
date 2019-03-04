@@ -3,7 +3,7 @@ import React from 'react';
 import ReactTable from "react-table";
 import formatBytes from "../services/FormatBytes"
 import './styles/table.scss';
-import { FaBan, FaGripLinesVertical } from 'react-icons/fa';
+import { FaBan } from 'react-icons/fa';
 
 export default class Table extends React.Component {
 
@@ -111,8 +111,7 @@ export default class Table extends React.Component {
             }
         ];
 
-        return <div>
-          <ReactTable
+        return <ReactTable
             className="-striped -highlight"
             showPagination={false}
             sortable={true}
@@ -148,6 +147,5 @@ export default class Table extends React.Component {
                 }
             }}
         />
-      </div>
     }
 }

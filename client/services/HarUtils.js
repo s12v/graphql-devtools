@@ -14,7 +14,7 @@ export default class HarUtils {
         const lowercaseContentType = contentType.toLowerCase();
         return har.request.headers.some(header => {
             return header.name.toLowerCase() === 'content-type'
-                && header.value.split(';')[0].toLowerCase() === lowercaseContentType
+                && header.value.split(';')[0].toLowerCase() === lowercaseContentType;
         })
     }
 
@@ -23,21 +23,21 @@ export default class HarUtils {
             return 'object' === typeof jsonStringOrObject ? jsonStringOrObject : JSON.parse(jsonStringOrObject);
         } catch (e) {
             if (e instanceof SyntaxError) {
-            } else throw e
+            } else throw e;
         }
         return {};
     }
 
     static getGraphQLQueries(har) {
         if (!this.isJson(har)) {
-            return []
+            return [];
         }
 
         try {
             let data = this.postData(har)
             data = typeof data === 'string' ? data.replace(/\r?\n|\r/g, '') : data;
             data = typeof data === 'string' ? JSON.parse(data) : data;
-            data = Array.isArray(data) ? data : [data]
+            data = Array.isArray(data) ? data : [data];
             let queries = [];
 
             data.forEach(query => {
@@ -48,7 +48,7 @@ export default class HarUtils {
                         variables: query.hasOwnProperty('variables') ? this.parseVariables(query.variables) : {}
                     });
                 }
-            })
+            });
 
             return queries;
 
@@ -56,6 +56,6 @@ export default class HarUtils {
             if (e instanceof SyntaxError) {
             } else throw e
         }
-        return []
+        return [];
     }
 }

@@ -41,7 +41,7 @@ describe('HarUtils', () => {
     });
 
     it('should return GraphQL query with multiple operations', () => {
-        const query = '[{"operationName": "one", "variables":{},"query":"query testOne {\n one \n} }\n"}, {"operationName": "two", "variables":{},"query":"query testTwo {\n two \n} }\n"}]'
+        const query = '[{"operationName": "one", "variables":{},"query":"query testOne {\n one \n} }\n"}, {"operationName": "two", "variables":{},"query":"query testTwo {\n two \n} }\n"}]';
         let har = harWithHeader({}, 'content-type', 'application/json');
         har = harWithPostData(har, query);
         expect(HarUtils.getGraphQLQueries(har)).to.deep.equal([
@@ -74,5 +74,5 @@ describe('HarUtils', () => {
                 ]
             }
         });
-    }
+    };
 });
