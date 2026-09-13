@@ -13,7 +13,7 @@
       { name : "accept", value : "application/json" },
       { name : "content-type", value : o.mime || "application/json" },
       { name : "authorization", value : "Bearer ghp_************************" },
-      { name : "user-agent", value : navigator.userAgent }
+      { name : "user-agent", value : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36" }
     ];
     var body = typeof o.body == "string" ? o.body : JSON.stringify(o.body);
     var content = typeof o.content == "string" ? o.content : JSON.stringify(o.content);

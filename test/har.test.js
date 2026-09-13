@@ -167,3 +167,23 @@ test('headers are matched case-insensitively', () => {
   assert.equal(har.mime([{ name: 'content-type', value: 'Application/JSON; charset=utf-8' }]), 'application/json');
   assert.equal(har.mime([]), '');
 });
+
+test('copy as cURL', () => {
+  const e = entry({ body: { query: "{ me { name } }", variables: { q: "it's" } } });
+  e.request.headers.push({ name: ':authority', value: 'api.example.com' }, { name: 'Content-Length', value: '42' }, { name: 'Authorization', value: 'Bearer x' });
+  assert.equal(har.curl(e), [
+    "curl 'https://api.example.com/graphql'",
+    "-H 'Content-Type: application/json'",
+    "-H 'Authorization: Bearer x'",
+    "--data-raw '{\"query\":\"{ me { name } }\",\"variables\":{\"q\":\"it'\\''s\"}}'",
+  ].join(' \\\n  '));
+  assert.equal(har.curl(entry({ url: 'https://x.io/g?query=%7Ba%7D' })), "curl 'https://x.io/g?query=%7Ba%7D'");
+  const put = entry({ body: '{"query":"{a}"}' });
+  put.request.method = 'PUT';
+  assert.match(har.curl(put), /^curl 'https:\/\/api.example.com\/graphql' \\\n  -X PUT \\\n/);
+  const emptyPost = entry({ body: '' });
+  assert.equal(har.curl(emptyPost), "curl 'https://api.example.com/graphql' \\\n  -H 'Content-Type: application/json' \\\n  -X POST");
+  assert.equal(har.curl({}), "curl ''");
+  assert.equal(har.headerLines([{ name: 'a', value: '1' }, { name: 'b', value: '2' }]), 'a: 1\nb: 2');
+  assert.equal(har.headerLines(undefined), '');
+});

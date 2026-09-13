@@ -24,7 +24,7 @@ Chrome Web Store listing is being republished. Until then, load it unpacked:
   Rows with an HTTP error or GraphQL errors are red.
 * **Query** tab: the document with syntax colours, the variables and the extensions under it.
 * **Response** tab: the pretty-printed response, with the error messages on top.
-* **Headers** tab: URL, method, status, timing, request and response headers.
+* **Headers** tab: URL, method, status, timing, request and response headers, **Copy as cURL**.
 * Every block has a **Copy** button.
 * Filter by name, URL or variables; **Clear**; **Preserve log** across navigations; arrow keys move
   the selection; Cmd/Ctrl+F focuses the filter.
