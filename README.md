@@ -55,8 +55,8 @@ sample traffic from `demo/har.js`; add `?theme=dark` for the dark palette.
 ## Release
 
 1. Set the same new version in `manifest.json` and `package.json`, commit.
-2. Tag and push: `git tag v1.0.0 && git push origin master v1.0.0`.
-3. The Release workflow runs the tests, builds `graphql-devtools-1.0.0.zip` (`npm run build` does the same
+2. Tag and push: `git tag v1.0.1 && git push origin master v1.0.1`.
+3. The Release workflow runs the tests, builds `graphql-devtools-1.0.1.zip` (`npm run build` does the same
    locally into `dist/`) and attaches it to a GitHub Release.
 4. Upload the zip in the [Chrome Web Store developer dashboard](https://chrome.google.com/webstore/devconsole).
 
