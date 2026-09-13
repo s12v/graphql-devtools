@@ -123,6 +123,15 @@ test('persisted queries: Apollo hash and Relay document ids', () => {
   assert.equal(relay.label, '#4213');
   // an id alone is just some JSON
   assert.deepEqual(ops(entry({ body: { id: '4213' } })), []);
+  // Instagram: query_hash in the URL (old) or doc_id + fb_api_req_friendly_name in a form body (current)
+  const ig = ops(entry({ url: 'https://www.instagram.com/graphql/query/?query_hash=9b498c08113f1e09617a1703c22b2f32&variables=%7B%22id%22%3A%2225025320%22%7D' }))[0];
+  assert.equal(ig.documentId, '9b498c08113f1e09617a1703c22b2f32');
+  assert.equal(ig.label, '#9b498c08113f1e09617a1703c22b2f32');
+  assert.deepEqual(ig.variables, { id: '25025320' });
+  const fb = ops(entry({ body: 'fb_api_req_friendly_name=PolarisProfilePageContentQuery&variables=%7B%22username%22%3A%22x%22%7D&doc_id=7663723823674585', mime: 'application/x-www-form-urlencoded' }))[0];
+  assert.equal(fb.label, 'PolarisProfilePageContentQuery');
+  assert.equal(fb.documentId, '7663723823674585');
+  assert.deepEqual(fb.variables, { username: 'x' });
   // the query wins over the hash when both are sent (APQ retry)
   const both = ops(entry({ body: { query: 'query Feed { feed { id } }', extensions: { persistedQuery: { sha256Hash: 'abc' } } } }))[0];
   assert.equal(both.label, 'Feed');
