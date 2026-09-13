@@ -1,11 +1,65 @@
-[![Build Status](https://travis-ci.org/s12v/graphql-devtools.svg?branch=master)](https://travis-ci.org/s12v/graphql-devtools)
+# GraphQL developer tools (Chrome extension)
 
-# GraphQL Chrome DevTools extension
+[![CI](https://github.com/s12v/graphql-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/s12v/graphql-devtools/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This extension adds a new tab to Chrome developer tools:
+A **GraphQL** panel in Chrome DevTools: every GraphQL operation the page sends, with its query, variables,
+response, errors and headers — the Network panel, narrowed down to GraphQL.
 
-![GraphQL developer tools](https://user-images.githubusercontent.com/1462574/32994379-d636fb8e-cd66-11e7-8b1d-516666579173.png)
+Demo with sample traffic: https://s12v.github.io/graphql-devtools/
 
-## How to try
+## Install
 
-Install the extension from Chrome Web Store, navigate to https://www.graphqlhub.com/playground/github, and inspect the page.
+Chrome Web Store listing is being republished. Until then, load it unpacked:
+
+1. `git clone https://github.com/s12v/graphql-devtools`
+2. Open `chrome://extensions`, enable **Developer mode**
+3. **Load unpacked** → select the `graphql-devtools` directory
+4. Open DevTools on any page that talks GraphQL — the **GraphQL** tab is at the end of the tab strip
+
+## What it shows
+
+* One row per operation: name (the operation name, or the first field of an anonymous query), type
+  (query / mutation / subscription), HTTP status with the number of GraphQL `errors`, size, time, URL.
+  Rows with an HTTP error or GraphQL errors are red.
+* **Query** tab: the document with syntax colours, the variables and the extensions under it.
+* **Response** tab: the pretty-printed response, with the error messages on top.
+* **Headers** tab: URL, method, status, timing, request and response headers.
+* Every block has a **Copy** button.
+* Filter by name, URL or variables; **Clear**; **Preserve log** across navigations; arrow keys move
+  the selection; Cmd/Ctrl+F focuses the filter.
+* Requests recorded since DevTools was opened appear when the panel is first shown.
+* Follows the DevTools theme, light or dark.
+
+Recognised request shapes: a JSON body with `query` (whatever the `Content-Type`), a batch (JSON array),
+`GET` with the query in the URL, `application/graphql`, form-encoded and multipart uploads
+(`operations` field), and persisted queries — Apollo's `extensions.persistedQuery.sha256Hash` or a
+Relay-style document id — which are listed by their operation name.
+
+## Privacy
+
+Everything happens in the DevTools window: the extension reads requests through the DevTools network API,
+makes no requests of its own and requests no permissions. Full text: [PRIVACY.md](PRIVACY.md).
+
+## Development
+
+No build step, no dependencies. Tests run on Node 20+:
+
+```
+npm test
+```
+
+`panel.html` opened outside DevTools (serve the directory over HTTP, e.g. `python3 -m http.server`) shows the
+sample traffic from `demo/har.js`; add `?theme=dark` for the dark palette.
+
+## Release
+
+1. Set the same new version in `manifest.json` and `package.json`, commit.
+2. Tag and push: `git tag v1.0.0 && git push origin master v1.0.0`.
+3. The Release workflow runs the tests, builds `graphql-devtools-1.0.0.zip` (`npm run build` does the same
+   locally into `dist/`) and attaches it to a GitHub Release.
+4. Upload the zip in the [Chrome Web Store developer dashboard](https://chrome.google.com/webstore/devconsole).
+
+## License
+
+MIT
