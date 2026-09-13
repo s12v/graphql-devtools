@@ -235,7 +235,6 @@ body.dragging {
   border-collapse: collapse;
   table-layout: fixed;
 }
-.c-name { width: 40%; }
 .c-type { width: 92px; }
 .c-status { width: 96px; }
 .c-size { width: 62px; }
@@ -244,11 +243,10 @@ body.dragging {
 #list {
   container-type: inline-size;
 }
-@container (max-width: 540px) {
+@container (max-width: 600px) {
   .c-url, #table th:nth-child(6), #table td:nth-child(6) { display: none; }
-  .c-name { width: auto; }
 }
-@container (max-width: 380px) {
+@container (max-width: 400px) {
   .c-type, #table th:nth-child(2), #table td:nth-child(2) { display: none; }
 }
 #table th,

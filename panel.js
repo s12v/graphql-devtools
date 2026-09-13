@@ -213,12 +213,12 @@
     return node;
   }
 
-  function copy(text, button) {
+  function copy(text, button, label) {
     var done = function () {
       button.textContent = "Copied";
       button.classList.add("done");
       setTimeout(function () {
-        button.textContent = "Copy";
+        button.textContent = label || "Copy";
         button.classList.remove("done");
       }, 1200);
     };
@@ -296,15 +296,20 @@
       ["Started", e.startedDateTime ? new Date(e.startedDateTime).toLocaleTimeString() : ""],
       ["Time", format.ms(e.time)],
       ["Size", row.size === null ? "" : format.bytes(row.size) + " (" + row.size + " bytes)"]
-    ]));
-    h.appendChild(kv("Request headers", (e.request.headers || []).map(function (x) { return [x.name, x.value]; })));
-    h.appendChild(kv("Response headers", (e.response && e.response.headers || []).map(function (x) { return [x.name, x.value]; })));
+    ], "Copy as cURL", har.curl(e)));
+    h.appendChild(kv("Request headers", (e.request.headers || []).map(function (x) { return [x.name, x.value]; }), "Copy", har.headerLines(e.request.headers)));
+    h.appendChild(kv("Response headers", (e.response && e.response.headers || []).map(function (x) { return [x.name, x.value]; }), "Copy", har.headerLines(e.response && e.response.headers)));
   }
 
-  function kv(title, pairs) {
+  function kv(title, pairs, copyLabel, copyText) {
     var el = document.createElement("div");
     el.className = "section";
-    el.innerHTML = '<div class="section-head"><span>' + format.escape(title) + "</span></div>";
+    el.innerHTML = '<div class="section-head"><span>' + format.escape(title) + "</span>"
+      + (copyLabel ? '<button type="button" class="copy">' + format.escape(copyLabel) + "</button>" : "") + "</div>";
+    var button = el.querySelector(".copy");
+    if (button) {
+      button.addEventListener("click", function () { copy(copyText, button, copyLabel); });
+    }
     var dl = document.createElement("dl");
     dl.className = "kv";
     pairs.forEach(function (p) {
