@@ -1,6 +1,6 @@
 # Privacy policy
 
-GraphQL developer tools is a browser extension that adds a GraphQL panel to Chrome DevTools. It lists the
+GraphQL developer tools is a browser extension that adds a GraphQL panel to the browser's developer tools (Chrome, Firefox). It lists the
 GraphQL requests the inspected page makes and shows their queries, variables, responses and headers.
 
 **Nothing leaves your browser.** The panel reads the requests through the DevTools network API, the same

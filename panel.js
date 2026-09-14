@@ -37,10 +37,15 @@
 
   var devtools = typeof chrome != "undefined" && chrome.devtools ? chrome.devtools : null;
   var wanted = /[?&]theme=(dark|light)/.exec(location.search);
+  // Chrome says "default" / "dark", Firefox "light" / "dark" (and tells when it changes)
+  var applyTheme = function (name) {
+    document.documentElement.setAttribute("data-theme", name == "dark" ? "dark" : "light");
+  };
   if (wanted) {
-    document.documentElement.setAttribute("data-theme", wanted[1]);
+    applyTheme(wanted[1]);
   } else if (devtools && devtools.panels && devtools.panels.themeName) {
-    document.documentElement.setAttribute("data-theme", devtools.panels.themeName == "dark" ? "dark" : "light");
+    applyTheme(devtools.panels.themeName);
+    if (devtools.panels.onThemeChanged) devtools.panels.onThemeChanged.addListener(applyTheme);
   }
 
   /* ---- rows ---- */
@@ -187,6 +192,7 @@
     detailsEl.hidden = false;
     showDetails(row);
     if (row.tr.scrollIntoViewIfNeeded) row.tr.scrollIntoViewIfNeeded(false);
+    else row.tr.scrollIntoView({ block : "nearest" });
   }
 
   function showPane(name) {

@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { root, panelScripts } = require('./load');
+const build = require('../scripts/build');
 
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const pages = ['devtools.html', 'panel.html'].map((f) => [f, fs.readFileSync(path.join(root, f), 'utf8')]);
@@ -41,8 +42,7 @@ test('pages satisfy the MV3 content security policy', () => {
 });
 
 test('build script packs exactly the extension files', () => {
-  const src = fs.readFileSync(path.join(root, 'scripts/build.js'), 'utf8');
-  const listed = /const files = \[([^\]]*)\]/.exec(src)[1].match(/'([^']+)'/g).map((s) => s.slice(1, -1));
+  const listed = build.files;
   for (const file of ['manifest.json', 'devtools.html', 'devtools.js', 'panel.html', 'panel.js', 'panel.css', 'LICENSE', 'images', 'lib']) {
     assert.ok(listed.includes(file), `${file} is not packed`);
   }
@@ -53,4 +53,13 @@ test('build script packs exactly the extension files', () => {
     assert.ok(listed.some((f) => src === f || src.startsWith(f + '/')), `${src} would be left out of the zip`);
   }
   assert.ok(!listed.includes('demo'), 'the demo traffic is not for the store');
+});
+
+test('the Firefox build adds the add-on id and nothing else', () => {
+  const ff = build.firefoxManifest(manifest);
+  assert.equal(ff.browser_specific_settings.gecko.id, 'graphql-devtools@snov.me');
+  assert.match(ff.browser_specific_settings.gecko.strict_min_version, /^\d+\.\d+$/);
+  const { browser_specific_settings, ...rest } = ff;
+  assert.deepEqual(rest, manifest);
+  assert.equal(manifest.browser_specific_settings, undefined, 'the Chrome manifest stays free of the Firefox key');
 });
