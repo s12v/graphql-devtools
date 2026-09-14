@@ -1,7 +1,7 @@
 name: Release
 
 # Push a tag like v1.0.0 (matching "version" in manifest.json) to build the
-# store package and attach it to a GitHub Release.
+# store packages (Chrome, Firefox) and attach them to a GitHub Release.
 
 on:
   push:

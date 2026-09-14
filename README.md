@@ -1,10 +1,10 @@
-# GraphQL developer tools (Chrome extension)
+# GraphQL developer tools (browser extension)
 
 [![CI](https://github.com/s12v/graphql-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/s12v/graphql-devtools/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A **GraphQL** panel in Chrome DevTools: every GraphQL operation the page sends, with its query, variables,
-response, errors and headers — the Network panel, narrowed down to GraphQL.
+A **GraphQL** panel in the browser's DevTools (Chrome, Firefox): every GraphQL operation the page sends, with its
+query, variables, response, errors and headers — the Network panel, narrowed down to GraphQL.
 
 Demo with sample traffic: https://s12v.github.io/graphql-devtools/
 
@@ -15,6 +15,10 @@ any page that talks GraphQL — the **GraphQL** tab is at the end of the tab str
 
 To run from source: `git clone https://github.com/s12v/graphql-devtools`, open `chrome://extensions`, enable
 **Developer mode**, **Load unpacked** → select the `graphql-devtools` directory.
+
+**Firefox:** `graphql-devtools-<version>-firefox.zip` from the [releases](https://github.com/s12v/graphql-devtools/releases)
+loads through `about:debugging` → This Firefox → **Load Temporary Add-on** (it is gone after a restart until the add-on
+is signed on addons.mozilla.org).
 
 ## What it shows
 
@@ -56,9 +60,10 @@ sample traffic from `demo/har.js`; add `?theme=dark` for the dark palette.
 
 1. Set the same new version in `manifest.json` and `package.json`, commit.
 2. Tag and push: `git tag v1.0.1 && git push origin master v1.0.1`.
-3. The Release workflow runs the tests, builds `graphql-devtools-1.0.1.zip` (`npm run build` does the same
-   locally into `dist/`) and attaches it to a GitHub Release.
-4. Upload the zip in the [Chrome Web Store developer dashboard](https://chrome.google.com/webstore/devconsole).
+3. The Release workflow runs the tests, builds `graphql-devtools-1.0.1.zip` and `graphql-devtools-1.0.1-firefox.zip`
+   (`npm run build` does the same locally into `dist/`) and attaches them to a GitHub Release.
+4. Upload the Chrome zip in the [Chrome Web Store developer dashboard](https://chrome.google.com/webstore/devconsole)
+   and the Firefox one on [addons.mozilla.org](https://addons.mozilla.org/developers/).
 
 ## License
 
