@@ -6,6 +6,8 @@
 A **GraphQL** panel in the browser's DevTools (Chrome, Firefox): every GraphQL operation the page sends, with its
 query, variables, response, errors and headers — the Network panel, narrowed down to GraphQL.
 
+![The GraphQL panel: a table of operations, the selected one's query and variables](docs/screenshots/1-overview.png)
+
 Demo with sample traffic: https://s12v.github.io/graphql-devtools/
 
 ## Install
