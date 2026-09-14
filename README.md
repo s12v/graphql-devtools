@@ -10,12 +10,11 @@ Demo with sample traffic: https://s12v.github.io/graphql-devtools/
 
 ## Install
 
-Chrome Web Store listing is being republished. Until then, load it unpacked:
+[Chrome Web Store](https://chromewebstore.google.com/detail/hflnkihcpgldmkepajmpooacmmhglpff), then open DevTools on
+any page that talks GraphQL — the **GraphQL** tab is at the end of the tab strip.
 
-1. `git clone https://github.com/s12v/graphql-devtools`
-2. Open `chrome://extensions`, enable **Developer mode**
-3. **Load unpacked** → select the `graphql-devtools` directory
-4. Open DevTools on any page that talks GraphQL — the **GraphQL** tab is at the end of the tab strip
+To run from source: `git clone https://github.com/s12v/graphql-devtools`, open `chrome://extensions`, enable
+**Developer mode**, **Load unpacked** → select the `graphql-devtools` directory.
 
 ## What it shows
 
