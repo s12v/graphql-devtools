@@ -196,15 +196,31 @@
     Object.keys(panes).forEach(function (p) { panes[p].hidden = p != name; });
   }
 
-  function section(title, note, body, copyText, plain) {
+  /*
+   * A coloured view of a query or a JSON text: foldable line by line when it is not too big,
+   * a plain highlight beyond fold.LIMIT lines, escaped text beyond json.LIMIT bytes.
+   */
+  function view(kind, text) {
+    if (kind == "plain" || text.length > json.LIMIT) return { html : format.escape(text), plain : true };
+    if (fold.lines(text) > fold.LIMIT) return { html : kind == "graphql" ? graphql.highlight(text) : json.highlight(text) };
+    var tokens = kind == "graphql" ? graphql.classify(graphql.tokens(text)) : json.tokens(text);
+    return { html : fold.render(tokens, kind == "json"), foldable : true };
+  }
+
+  /* A titled block of the details pane: head with a note and buttons, the view under it */
+  function section(title, note, v, copyText) {
+    var nested = v.foldable && v.html.indexOf('data-depth="1"') >= 0;
     var html = '<div class="section"><div class="section-head"><span>' + format.escape(title) + "</span>"
       + (note ? '<span class="note">' + format.escape(note) + "</span>" : "")
+      + '<span class="buttons">'
+      + (nested ? '<button type="button" class="copy fold-all" data-fold="collapse" title="Collapse all">\u2212</button><button type="button" class="copy fold-all" data-fold="expand" title="Expand all">+</button>' : "")
       + (copyText !== null ? '<button type="button" class="copy">Copy</button>' : "")
-      + '</div><pre class="code' + (plain ? " plain" : "") + '">' + body + "</pre></div>";
+      + "</span></div>"
+      + '<div class="code' + (v.plain ? " plain" : "") + (v.foldable ? " foldable" : "") + '">' + v.html + "</div></div>";
     var el = document.createElement("div");
     el.innerHTML = html;
     var node = el.firstChild;
-    var button = node.querySelector(".copy");
+    var button = node.querySelector(".copy:not(.fold-all)");
     if (button) {
       button.addEventListener("click", function () {
         copy(copyText, button);
@@ -212,6 +228,40 @@
     }
     return node;
   }
+
+  /* ---- folding: which lines are hidden follows from which fold lines are collapsed ---- */
+
+  function relayout(code) {
+    var lines = code.children;
+    var ends = [];
+    for (var i = 0; i < lines.length; i++) {
+      while (ends.length && i >= ends[ends.length - 1]) ends.pop();
+      lines[i].hidden = ends.length > 0;
+      if (lines[i].classList.contains("collapsed")) ends.push(+lines[i].getAttribute("data-end"));
+    }
+  }
+
+  function foldAll(code, collapse) {
+    var lines = code.querySelectorAll(".line[data-end]");
+    // the outermost bracket stays open, and so does a lone wrapper under it ({ "data": { … } })
+    var wrappers = code.querySelectorAll('.line[data-depth="1"]').length;
+    var from = wrappers == 1 ? 2 : 1;
+    for (var i = 0; i < lines.length; i++) {
+      lines[i].classList.toggle("collapsed", collapse && +lines[i].getAttribute("data-depth") >= from);
+    }
+    relayout(code);
+  }
+
+  detailsEl.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t.classList.contains("toggle") || t.classList.contains("ellipsis")) {
+      var line = t.closest(".line");
+      line.classList.toggle("collapsed");
+      relayout(line.parentNode);
+    } else if (t.classList.contains("fold-all")) {
+      foldAll(t.closest(".section").querySelector(".code"), t.getAttribute("data-fold") == "collapse");
+    }
+  });
 
   function copy(text, button, label) {
     var done = function () {
@@ -246,26 +296,27 @@
     q.innerHTML = "";
     if (op.query !== null) {
       var note = op.operationName ? "operationName: " + op.operationName : op.multiple ? "several operations, no operationName" : "";
-      q.appendChild(section("Query", note, graphql.highlight(op.query), op.query));
+      q.appendChild(section("Query", note, view("graphql", op.query), op.query));
     } else {
       var what = op.persisted ? "sha256Hash: " + op.persisted : "documentId: " + op.documentId;
-      q.appendChild(section("Persisted query", op.operationName ? "operationName: " + op.operationName : "", format.escape(what) + "\n" + format.escape("The document itself was not sent — the server knows it by this key."), op.persisted || op.documentId, true));
+      q.appendChild(section("Persisted query", op.operationName ? "operationName: " + op.operationName : "",
+        view("plain", what + "\nThe document itself was not sent \u2014 the server knows it by this key."), op.persisted || op.documentId));
     }
     var vars = json.pretty(op.variables);
     if (vars != "{}") {
-      q.appendChild(section("Variables", "", json.highlight(vars), vars));
+      q.appendChild(section("Variables", "", view("json", vars), vars));
     }
     if (op.extensions) {
       var ext = json.pretty(op.extensions);
-      q.appendChild(section("Extensions", "", json.highlight(ext), ext));
+      q.appendChild(section("Extensions", "", view("json", ext), ext));
     }
 
     var r = panes.response;
     r.innerHTML = "";
     if (!row.group.loaded) {
-      r.appendChild(section("Response", "", "Loading…", null, true));
+      r.appendChild(section("Response", "", view("plain", "Loading\u2026"), null));
     } else if (!row.res || row.res.text === "") {
-      r.appendChild(section("Response", statusText(row), "(empty)", null, true));
+      r.appendChild(section("Response", statusText(row), view("plain", "(empty)"), null));
     } else {
       var res = row.res;
       if (res.errors && res.value && Array.isArray(res.value.errors)) {
@@ -273,7 +324,7 @@
         box.className = "errors";
         res.value.errors.forEach(function (err) {
           var line = document.createElement("div");
-          var path = err && Array.isArray(err.path) ? " — at " + err.path.join(".") : "";
+          var path = err && Array.isArray(err.path) ? " \u2014 at " + err.path.join(".") : "";
           line.textContent = (err && err.message ? err.message : JSON.stringify(err)) + path;
           box.appendChild(line);
         });
@@ -281,8 +332,8 @@
       }
       var isJson = res.value !== undefined;
       var text = isJson ? json.pretty(res.value) : res.text;
-      var note2 = [format.bytes(row.size), format.ms(row.time)].filter(Boolean).join(" · ");
-      r.appendChild(section("Response", note2, isJson ? json.highlight(text) : format.escape(text), text, !isJson));
+      var note2 = [format.bytes(row.size), format.ms(row.time)].filter(Boolean).join(" \u00b7 ");
+      r.appendChild(section("Response", note2, view(isJson ? "json" : "plain", text), text));
     }
 
     var h = panes.headers;
