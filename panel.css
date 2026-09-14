@@ -385,8 +385,12 @@ body.dragging {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.section-head .copy {
+.section-head .buttons {
   margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.section-head .copy {
   padding: 1px 7px;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -404,6 +408,11 @@ body.dragging {
   color: var(--accent);
   border-color: var(--accent);
 }
+.section-head .fold-all {
+  width: 22px;
+  padding: 1px 0;
+  text-align: center;
+}
 .code {
   margin: 0;
   padding: 6px 8px;
@@ -414,6 +423,64 @@ body.dragging {
 }
 .code.plain {
   color: var(--muted);
+}
+
+/* ---- folding ---- */
+
+.code.foldable {
+  padding-left: 22px;
+}
+.line {
+  position: relative;
+  min-height: 1.5em;
+}
+.line .gutter {
+  position: absolute;
+  left: -16px;
+  top: 0;
+  width: 14px;
+  height: 1.5em;
+}
+.toggle {
+  display: block;
+  width: 14px;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.toggle:hover {
+  opacity: 1;
+}
+.toggle::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 6px;
+  border: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+}
+.line.collapsed .toggle::before {
+  left: 5px;
+  top: 4px;
+  border: 4px solid transparent;
+  border-left: 5px solid var(--muted);
+}
+.ellipsis {
+  display: none;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--subtle-hover);
+  color: var(--muted);
+  font-size: 10.5px;
+  cursor: pointer;
+  user-select: none;
+}
+.line.collapsed .ellipsis {
+  display: inline;
+}
+.line.collapsed .ellipsis:hover {
+  color: var(--fg);
 }
 
 .t-keyword { color: var(--c-keyword); }

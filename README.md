@@ -24,7 +24,8 @@ To run from source: `git clone https://github.com/s12v/graphql-devtools`, open `
 * **Query** tab: the document with syntax colours, the variables and the extensions under it.
 * **Response** tab: the pretty-printed response, with the error messages on top.
 * **Headers** tab: URL, method, status, timing, request and response headers, **Copy as cURL**.
-* Every block has a **Copy** button.
+* Every block has a **Copy** button; queries and JSON fold — a triangle on every multi-line bracket, a
+  collapsed one shows `{ … 3 keys }`, **−** / **+** collapse or expand the whole view.
 * Filter by name, URL or variables; **Clear**; **Preserve log** across navigations; arrow keys move
   the selection; Cmd/Ctrl+F focuses the filter.
 * Requests recorded since DevTools was opened appear when the panel is first shown.
