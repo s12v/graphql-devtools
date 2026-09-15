@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GraphQL developer tools",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A GraphQL panel in DevTools: every operation the page sends, with its variables, response, errors and headers",
   "devtools_page": "devtools.html",
   "icons": {

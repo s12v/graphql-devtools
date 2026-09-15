@@ -65,8 +65,8 @@ sample traffic from `demo/har.js`; add `?theme=dark` for the dark palette.
 ## Release
 
 1. Set the same new version in `manifest.json` and `package.json`, commit.
-2. Tag and push: `git tag v1.1.0 && git push origin master v1.1.0`.
-3. The Release workflow runs the tests, builds `graphql-devtools-1.1.0.zip` and `graphql-devtools-1.1.0-firefox.zip`
+2. Tag and push: `git tag v1.2.0 && git push origin master v1.2.0`.
+3. The Release workflow runs the tests, builds `graphql-devtools-1.2.0.zip` and `graphql-devtools-1.2.0-firefox.zip`
    (`npm run build` does the same locally into `dist/`) and attaches them to a GitHub Release.
 4. Upload the Chrome zip in the [Chrome Web Store developer dashboard](https://chrome.google.com/webstore/devconsole)
    and the Firefox one on [addons.mozilla.org](https://addons.mozilla.org/developers/).
