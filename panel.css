@@ -170,6 +170,34 @@ body {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--focus);
 }
+#type {
+  height: 20px;
+  padding: 0 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  background: var(--bg);
+  color: var(--fg);
+}
+.toggle-button {
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+.toggle-button:hover {
+  color: var(--fg);
+  background: var(--subtle-hover);
+}
+.toggle-button.active {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-subtle);
+}
 .check {
   display: inline-flex;
   align-items: center;
@@ -271,8 +299,19 @@ body.dragging {
   color: var(--fg);
   background: var(--subtle);
   border-bottom: 1px solid var(--border);
-  cursor: default;
+  cursor: pointer;
   user-select: none;
+}
+#table th:hover {
+  background: var(--subtle-hover);
+}
+#table th.sort-asc::after,
+#table th.sort-desc::after {
+  content: " \25B4";
+  color: var(--muted);
+}
+#table th.sort-desc::after {
+  content: " \25BE";
 }
 #table tbody tr {
   cursor: default;
@@ -412,6 +451,9 @@ body.dragging {
   width: 22px;
   padding: 1px 0;
   text-align: center;
+}
+.section-head .extra {
+  color: var(--muted);
 }
 .code {
   margin: 0;

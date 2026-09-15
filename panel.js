@@ -14,6 +14,9 @@
   var detailsEl = $("details");
   var listEl = $("list");
   var gutterEl = $("gutter");
+  var typeEl = $("type");
+  var errorsEl = $("errors");
+  var headers = Array.prototype.slice.call(document.querySelectorAll("#table th[data-sort]"));
   var panes = { query : $("pane-query"), response : $("pane-response"), headers : $("pane-headers") };
   var tabButtons = Array.prototype.slice.call(document.querySelectorAll("#details-tabs .tab"));
 
@@ -29,9 +32,15 @@
 
   var rows = [];          // { entry, op, group, status, size, time, url, res, tr }
   var seen = {};          // entries already listed (getHAR and onRequestFinished can overlap)
+  var learned = {};       // persisted query hash → document, from a request that carried both
   var selected = null;
+  var rendered = {};      // which details panes show the selected row (they render on demand)
   var pane = remember("pane") || "query";
+  var pretty = remember("pretty") != "0";
   var filter = "";
+  var typeFilter = "";
+  var onlyErrors = false;
+  var sort = { key : null, dir : 1 };
 
   /* ---- theme: DevTools' own, then the OS ---- */
 
@@ -62,6 +71,17 @@
     if (seen[k]) return;
     seen[k] = true;
 
+    // Apollo's APQ retry carries the hash and the document: from then on the hash alone is enough
+    ops = ops.map(function (op) {
+      if (op.query && op.persisted) {
+        learned[op.persisted] = op.query;
+        teach(op.persisted);
+      } else if (!op.query && op.persisted && learned[op.persisted]) {
+        op = har.withQuery(op, learned[op.persisted]);
+      }
+      return op;
+    });
+
     var group = { entry : entry, text : null, loaded : false, rows : [] };
     ops.forEach(function (op) {
       var row = {
@@ -80,7 +100,19 @@
       render(row);
     });
     load(group);
+    if (sort.key) applySort();
     update();
+  }
+
+  /* rows listed earlier with only this hash get the document too */
+  function teach(hash) {
+    rows.forEach(function (row) {
+      if (row.op.persisted == hash && !row.op.query) {
+        row.op = har.withQuery(row.op, learned[hash]);
+        render(row);
+        if (row === selected) showDetails(row);
+      }
+    });
   }
 
   /* the body comes separately and once per entry; a batch shares it between its rows */
@@ -102,6 +134,7 @@
         render(row);
       });
       if (selected && selected.group === group) showDetails(selected);
+      update();
     });
   }
 
@@ -140,10 +173,10 @@
       n.textContent = " " + (op.index + 1) + "/" + row.group.rows.length;
       name.appendChild(n);
     }
-    cell(tr, op.type ? "" : "muted", op.type || (op.persisted ? "persisted" : ""));
+    cell(tr, op.type ? "" : "muted", op.type || (op.persisted || op.documentId ? "persisted" : ""));
     cell(tr, "", statusText(row), row.entry.response && row.entry.response.statusText || "");
     cell(tr, "num", row.size === null ? "" : format.bytes(row.size), row.size === null ? "" : row.size + " bytes");
-    cell(tr, "num", format.ms(row.time));
+    cell(tr, "num", format.ms(row.time), har.timings(row.entry));
     cell(tr, "muted", format.path(row.url), row.url);
     tr.classList.toggle("error", row.status >= 400 || !row.status || !!(row.res && row.res.errors));
     tr.classList.toggle("selected", row === selected);
@@ -155,20 +188,75 @@
     }
   }
 
+  function failed(row) {
+    return row.status >= 400 || !row.status || !!(row.res && row.res.errors);
+  }
+
   function matches(row) {
+    if (onlyErrors && !failed(row)) return false;
+    if (typeFilter && (row.op.type || "persisted") != typeFilter) return false;
     if (!filter) return true;
     var hay = [row.op.label, row.op.type, row.url, JSON.stringify(row.op.variables)].join("\n").toLowerCase();
     return hay.indexOf(filter) >= 0;
   }
 
-  function visible() {
-    return rows.filter(matches);
+  /* rows in display order: as they arrived, or by the sorted column */
+  function order() {
+    if (!sort.key) return rows;
+    var key = sort.key;
+    var value = function (row) {
+      switch (key) {
+        case "name": return (row.op.label || "").toLowerCase();
+        case "type": return row.op.type || (row.op.persisted || row.op.documentId ? "persisted" : "");
+        case "status": return (row.status || 0) + (row.res && row.res.errors ? 0.5 : 0);
+        case "size": return row.size === null ? -1 : row.size;
+        case "time": return typeof row.time == "number" ? row.time : -1;
+        default: return row.url;
+      }
+    };
+    return rows.slice().sort(function (a, b) {
+      var x = value(a), y = value(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
+    });
   }
 
+  function applySort() {
+    order().forEach(function (row) { rowsEl.appendChild(row.tr); });
+    headers.forEach(function (th) {
+      th.classList.toggle("sort-asc", th.getAttribute("data-sort") == sort.key && sort.dir > 0);
+      th.classList.toggle("sort-desc", th.getAttribute("data-sort") == sort.key && sort.dir < 0);
+    });
+  }
+
+  function visible() {
+    return order().filter(matches);
+  }
+
+  function refilter() {
+    rows.forEach(function (row) { row.tr.hidden = !matches(row); });
+    update();
+  }
+
+  /* "12 requests · 2 errors · 1.2 MB · 4.3 s" for the rows in view */
   function update() {
-    var shown = visible().length;
     emptyEl.hidden = rows.length > 0;
-    countEl.textContent = rows.length == 0 ? "" : (shown == rows.length ? rows.length : shown + " / " + rows.length) + (rows.length == 1 ? " request" : " requests");
+    if (!rows.length) {
+      countEl.textContent = "";
+      return;
+    }
+    var shown = visible();
+    var errors = 0, size = 0, time = 0;
+    shown.forEach(function (row) {
+      if (failed(row)) errors++;
+      if (row.size !== null) size += row.size;
+      if (typeof row.time == "number" && row.time > 0) time += row.time;
+    });
+    var parts = [(shown.length == rows.length ? rows.length : shown.length + " / " + rows.length) + (rows.length == 1 ? " request" : " requests")];
+    if (errors) parts.push(errors + (errors == 1 ? " error" : " errors"));
+    if (size) parts.push(format.bytes(size));
+    if (time) parts.push(format.ms(time));
+    countEl.textContent = parts.join(" \u00b7 ");
+    countEl.title = "size and time are sums over the rows in view";
   }
 
   function clear() {
@@ -200,6 +288,20 @@
     remember("pane", name);
     tabButtons.forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-pane") == name); });
     Object.keys(panes).forEach(function (p) { panes[p].hidden = p != name; });
+    if (selected && !rendered[name]) renderPane(name, selected);
+  }
+
+  /* only the visible pane is built; the others wait for their tab (big responses stay cheap to step through) */
+  function showDetails(row) {
+    rendered = {};
+    renderPane(pane, row);
+  }
+
+  function renderPane(name, row) {
+    rendered[name] = true;
+    if (name == "query") renderQuery(row);
+    else if (name == "response") renderResponse(row);
+    else renderHeaders(row);
   }
 
   /*
@@ -214,11 +316,12 @@
   }
 
   /* A titled block of the details pane: head with a note and buttons, the view under it */
-  function section(title, note, v, copyText) {
+  function section(title, note, v, copyText, extra) {
     var nested = v.foldable && v.html.indexOf('data-depth="1"') >= 0;
     var html = '<div class="section"><div class="section-head"><span>' + format.escape(title) + "</span>"
       + (note ? '<span class="note">' + format.escape(note) + "</span>" : "")
       + '<span class="buttons">'
+      + (extra ? '<button type="button" class="copy extra' + (extra.active ? " active" : "") + '" title="' + format.escape(extra.title) + '">' + format.escape(extra.label) + "</button>" : "")
       + (nested ? '<button type="button" class="copy fold-all" data-fold="collapse" title="Collapse all">\u2212</button><button type="button" class="copy fold-all" data-fold="expand" title="Expand all">+</button>' : "")
       + (copyText !== null ? '<button type="button" class="copy">Copy</button>' : "")
       + "</span></div>"
@@ -226,12 +329,13 @@
     var el = document.createElement("div");
     el.innerHTML = html;
     var node = el.firstChild;
-    var button = node.querySelector(".copy:not(.fold-all)");
+    var button = node.querySelector(".copy:not(.fold-all):not(.extra)");
     if (button) {
       button.addEventListener("click", function () {
         copy(copyText, button);
       });
     }
+    if (extra) node.querySelector(".extra").addEventListener("click", extra.onClick);
     return node;
   }
 
@@ -296,13 +400,27 @@
     }
   }
 
-  function showDetails(row) {
+  function renderQuery(row) {
     var op = row.op;
     var q = panes.query;
     q.innerHTML = "";
     if (op.query !== null) {
-      var note = op.operationName ? "operationName: " + op.operationName : op.multiple ? "several operations, no operationName" : "";
-      q.appendChild(section("Query", note, view("graphql", op.query), op.query));
+      var printed = graphql.print(op.query);
+      var tidy = printed == op.query.trim();       // nothing to prettify
+      var text = pretty || tidy ? printed : op.query;
+      var note = op.learned ? "document learned from an earlier request with this hash"
+        : op.operationName ? "operationName: " + op.operationName : op.multiple ? "several operations, no operationName" : "";
+      var toggle = tidy ? null : {
+        label : pretty ? "as sent" : "pretty",
+        title : pretty ? "Show the document exactly as it was sent" : "Reformat the document",
+        active : false,
+        onClick : function () {
+          pretty = !pretty;
+          remember("pretty", pretty ? "1" : "0");
+          renderQuery(row);
+        }
+      };
+      q.appendChild(section("Query", note, view("graphql", text), text, toggle));
     } else {
       var what = op.persisted ? "sha256Hash: " + op.persisted : "documentId: " + op.documentId;
       q.appendChild(section("Persisted query", op.operationName ? "operationName: " + op.operationName : "",
@@ -316,7 +434,9 @@
       var ext = json.pretty(op.extensions);
       q.appendChild(section("Extensions", "", view("json", ext), ext));
     }
+  }
 
+  function renderResponse(row) {
     var r = panes.response;
     r.innerHTML = "";
     if (!row.group.loaded) {
@@ -338,10 +458,12 @@
       }
       var isJson = res.value !== undefined;
       var text = isJson ? json.pretty(res.value) : res.text;
-      var note2 = [format.bytes(row.size), format.ms(row.time)].filter(Boolean).join(" \u00b7 ");
-      r.appendChild(section("Response", note2, view(isJson ? "json" : "plain", text), text));
+      var note = [format.bytes(row.size), format.ms(row.time), har.serverTiming(row.entry.response && row.entry.response.headers)].filter(Boolean).join(" \u00b7 ");
+      r.appendChild(section("Response", note, view(isJson ? "json" : "plain", text), text));
     }
+  }
 
+  function renderHeaders(row) {
     var h = panes.headers;
     h.innerHTML = "";
     var e = row.entry;
@@ -352,6 +474,8 @@
       ["Protocol", e.request.httpVersion || ""],
       ["Started", e.startedDateTime ? new Date(e.startedDateTime).toLocaleTimeString() : ""],
       ["Time", format.ms(e.time)],
+      ["Timing", har.timings(e)],
+      ["Server timing", har.serverTiming(e.response && e.response.headers)],
       ["Size", row.size === null ? "" : format.bytes(row.size) + " (" + row.size + " bytes)"]
     ], "Copy as cURL", har.curl(e)));
     h.appendChild(kv("Request headers", (e.request.headers || []).map(function (x) { return [x.name, x.value]; }), "Copy", har.headerLines(e.request.headers)));
@@ -395,8 +519,27 @@
 
   filterEl.addEventListener("input", function () {
     filter = filterEl.value.trim().toLowerCase();
-    rows.forEach(function (row) { row.tr.hidden = !matches(row); });
-    update();
+    refilter();
+  });
+  typeEl.addEventListener("change", function () {
+    typeFilter = typeEl.value;
+    refilter();
+  });
+  errorsEl.addEventListener("click", function () {
+    onlyErrors = !onlyErrors;
+    errorsEl.classList.toggle("active", onlyErrors);
+    refilter();
+  });
+
+  // a column header sorts: ascending, descending, then back to arrival order
+  headers.forEach(function (th) {
+    th.addEventListener("click", function () {
+      var k = th.getAttribute("data-sort");
+      if (sort.key != k) sort = { key : k, dir : 1 };
+      else if (sort.dir > 0) sort.dir = -1;
+      else sort = { key : null, dir : 1 };
+      applySort();
+    });
   });
 
   preserveEl.checked = remember("preserve") == "1";

@@ -7,7 +7,7 @@
   var n = 0;
 
   function entry(o) {
-    var reqHeaders = [
+    var reqHeaders = o.method == "GET" ? [ { name : "accept", value : "application/json" }, { name : "authorization", value : "Bearer ghp_************************" } ] : [
       { name : ":authority", value : format.host(o.url) },
       { name : ":method", value : o.method || "POST" },
       { name : "accept", value : "application/json" },
@@ -27,6 +27,7 @@
         headers : reqHeaders,
         postData : o.body === undefined ? undefined : { mimeType : o.mime || "application/json", text : body }
       },
+      timings : { blocked : 0.8, dns : -1, connect : -1, ssl : -1, send : 0.2, wait : Math.round(o.time * 0.85), receive : Math.round(o.time * 0.15) },
       response : {
         status : o.status === undefined ? 200 : o.status,
         statusText : o.status == 500 ? "Internal Server Error" : o.status == 401 ? "Unauthorized" : o.status === 0 ? "" : "OK",
@@ -35,6 +36,7 @@
           { name : "content-type", value : "application/json; charset=utf-8" },
           { name : "content-encoding", value : "gzip" },
           { name : "cache-control", value : "no-cache" },
+          { name : "server-timing", value : "db;dur=" + Math.round(o.time * 0.3) + ", app;dur=" + Math.round(o.time * 0.5) },
           { name : "x-request-id", value : "c0ffee-" + (1000 + n) }
         ],
         content : { size : o.size === undefined ? content.length : o.size, mimeType : "application/json" },
@@ -70,10 +72,17 @@
     entry({ url : "https://api.example.com/graphql", body : { operationName : "Feed", variables : { first : 10, after : null },
         extensions : { persistedQuery : { version : 1, sha256Hash : "ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38" } } }, time : 44.1,
       content : { errors : [ { message : "PersistedQueryNotFound", extensions : { code : "PERSISTED_QUERY_NOT_FOUND" } } ] } }),
+    entry({ url : "https://api.example.com/graphql", body : { operationName : "Feed", query : "query Feed($first:Int,$after:String){feed(first:$first,after:$after){edges{node{id title}}pageInfo{endCursor hasNextPage}}}", variables : { first : 10, after : null },
+        extensions : { persistedQuery : { version : 1, sha256Hash : "ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38" } } }, time : 63.8,
+      content : { data : { feed : { edges : [ { node : { id : "p_1", title : "Hasher 2.2" } }, { node : { id : "p_2", title : "GraphQL devtools 1.1" } } ], pageInfo : { endCursor : "cDJf", hasNextPage : false } } } } }),
     entry({ url : "https://api.example.com/graphql?query=" + encodeURIComponent("{ health { status version } }"), method : "GET", time : 18.7,
       content : { data : { health : { status : "ok", version : "3.4.1" } } } }),
     entry({ url : "https://api.example.com/graphql", body : { query : "subscription OnMessage($room: ID!) { message(room: $room) { id text } }", variables : { room : "42" } }, status : 500, time : 1530.2,
       content : "<html><body><h1>502 Bad Gateway</h1></body></html>" }),
+    entry({ url : "https://github.com/_graphql?body=" + encodeURIComponent(JSON.stringify({ persistedQueryName : "OpenClosedTabsQuery", query : "9b5335baab0566640cfa28c329582507", variables : { name : "graphql-devtools", owner : "s12v" } })), method : "GET", time : 88.1,
+      content : { data : { repository : { id : "MDEwOlJlcG9zaXRvcnkxMTEyMDQzNTA=", search : { closedIssueCount : 12, openIssueCount : 2 } } } } }),
+    entry({ url : "https://x.com/i/api/graphql/E3opETHurmVJflFsUBVuUQ/UserByScreenName?variables=" + encodeURIComponent('{"screen_name":"github"}') + "&features=" + encodeURIComponent('{"hidden_profile_likes_enabled":true}'), method : "GET", time : 141.9,
+      content : { data : { user : { result : { __typename : "User", rest_id : "13334762", legacy : { screen_name : "github", followers_count : 2600000 } } } } } }),
     entry({ url : "https://gql.twitch.tv/gql", mime : "text/plain;charset=UTF-8", body : '[{"operationName":"ChannelShell","variables":{"login":"monstercat"},"extensions":{"persistedQuery":{"version":1,"sha256Hash":"580ab410bcd0c1ad194224957ae2241e5d252b2c5173d8e0cce9d32d5bb14efe"}}}]', time : 77.3,
       content : [ { data : { userOrError : { id : "27446517", login : "monstercat", displayName : "Monstercat" } } } ] })
   ]);
