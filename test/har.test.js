@@ -242,3 +242,45 @@ test('timings and Server-Timing', () => {
   assert.equal(har.serverTiming([{ name: 'Server-Timing', value: 'db;dur=53, app;desc="render";dur=47.2, cache;desc=hit' }]), 'db 53 ms · app (render) 47 ms · cache (hit)');
   assert.equal(har.serverTiming([]), '');
 });
+
+test('replay: the request as a fetch the page can make again', () => {
+  const e = entry({ body: { query: '{ me { id } }' } });
+  e.request.headers.push({ name: ':authority', value: 'x' }, { name: 'Cookie', value: 'a=1' }, { name: 'Authorization', value: 'Bearer t' }, { name: 'X-Client', value: 'web' }, { name: 'User-Agent', value: 'UA' }, { name: 'Sec-Fetch-Mode', value: 'cors' });
+  const r = har.replay(e);
+  assert.equal(r.url, 'https://api.example.com/graphql');
+  assert.equal(r.method, 'POST');
+  assert.deepEqual(r.headers, { 'Content-Type': 'application/json', Authorization: 'Bearer t', 'X-Client': 'web' });
+  assert.equal(r.body, '{"query":"{ me { id } }"}');
+  assert.equal(har.replay(e, '{"query":"{ you }"}').body, '{"query":"{ you }"}');
+  const get = har.replay(entry({ url: 'https://x.io/g?query=%7Ba%7D' }));
+  assert.equal(get.method, 'GET');
+  assert.equal(get.body, null);
+  const code = har.replayCode(r);
+  assert.match(code, /^\(function \(r\) \{ fetch\(r\.url, \{ method: r\.method, headers: r\.headers, body: r\.body, credentials: "include" \}\)/);
+  assert.ok(code.endsWith(')'));
+  // the code parses and carries the spec
+  const seen = [];
+  new Function('fetch', code)((url, init) => { seen.push([url, init]); return Promise.reject(); });
+  assert.equal(seen[0][0], r.url);
+  assert.equal(seen[0][1].body, r.body);
+});
+
+test('editedBody: the JSON body with the document and variables replaced', () => {
+  const e = entry({ body: { operationName: 'Feed', query: 'query Feed { feed { id } }', variables: { first: 10 }, extensions: { persistedQuery: { version: 1, sha256Hash: 'abc' }, tracing: true } } });
+  const [op] = har.operations(e);
+  const same = JSON.parse(har.editedBody(e, op, op.query, { first: 5 }));
+  assert.deepEqual(same, { operationName: 'Feed', query: 'query Feed { feed { id } }', variables: { first: 5 }, extensions: { persistedQuery: { version: 1, sha256Hash: 'abc' }, tracing: true } });
+  const changed = JSON.parse(har.editedBody(e, op, 'query Feed2 { feed { id title } }', { first: 5 }));
+  assert.deepEqual(changed, { operationName: 'Feed2', query: 'query Feed2 { feed { id title } }', variables: { first: 5 }, extensions: { tracing: true } });
+  // a batch member becomes a single request
+  const batch = entry({ body: [{ query: '{ a }' }, { query: '{ b }', variables: { x: 1 } }] });
+  const second = har.operations(batch)[1];
+  assert.deepEqual(JSON.parse(har.editedBody(batch, second, '{ b c }', { x: 2 })), { query: '{ b c }', variables: { x: 2 } });
+  // a hash-only request keeps its extensions when only the variables change
+  const apq = entry({ body: { operationName: 'Feed', variables: { first: 10 }, extensions: { persistedQuery: { version: 1, sha256Hash: 'abc' } } } });
+  const apqOp = har.operations(apq)[0];
+  assert.deepEqual(JSON.parse(har.editedBody(apq, apqOp, null, { first: 1 })), { operationName: 'Feed', variables: { first: 1 }, extensions: { persistedQuery: { version: 1, sha256Hash: 'abc' } } });
+  // not editable: GET, forms
+  assert.equal(har.editedBody(entry({ url: 'https://x.io/g?query=%7Ba%7D' }), { index: 0 }, '{ a }', {}), null);
+  assert.equal(har.editedBody(entry({ body: 'query=%7Ba%7D', mime: 'application/x-www-form-urlencoded' }), { index: 0 }, '{ a }', {}), null);
+});

@@ -5,7 +5,9 @@ GraphQL requests the inspected page makes and shows their queries, variables, re
 
 **Nothing leaves your browser.** The panel reads the requests through the DevTools network API, the same
 data the built-in Network panel shows, and only while DevTools is open. It makes no network requests of its
-own, embeds no analytics or telemetry, has no accounts and no backend.
+own, embeds no analytics or telemetry, has no accounts and no backend. The only request it ever causes is the
+one you ask for with **Resend**: the inspected page then sends that request again, to the same server, as if
+the page itself had made it.
 
 **What is stored.** The panel keeps a few settings in the browser's `localStorage`: the selected details tab,
 the width of the details pane and the state of the "Preserve log" checkbox. The requests themselves are held

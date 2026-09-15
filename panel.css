@@ -198,6 +198,11 @@ body {
   border-color: var(--danger);
   background: var(--danger-subtle);
 }
+.toggle-button.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
 .check {
   display: inline-flex;
   align-items: center;
@@ -342,6 +347,26 @@ body.dragging {
 #table td.num {
   text-align: right;
 }
+/* grouped mode: a summary row, its members indented under it */
+#table tr.group td:first-child {
+  padding-left: 4px;
+}
+#table tr.group .arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin: 0 5px 1px 2px;
+  border: 4px solid transparent;
+  border-left: 5px solid var(--muted);
+}
+#table tr.group.expanded .arrow {
+  margin: 0 4px 2px 1px;
+  border: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+}
+#table tr.member td:first-child {
+  padding-left: 22px;
+}
 .muted {
   color: var(--muted);
 }
@@ -455,6 +480,73 @@ body.dragging {
 .section-head .extra {
   color: var(--muted);
 }
+/* Resend / Edit & resend */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.actions .note {
+  margin-left: 4px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.actions .copy {
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.actions .copy:hover {
+  color: var(--fg);
+  background: var(--subtle-hover);
+}
+.actions .copy.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-subtle);
+}
+.editor label {
+  display: block;
+  padding: 6px 8px 2px;
+  color: var(--muted);
+}
+.editor .hint {
+  padding: 6px 8px;
+  color: var(--muted);
+}
+.editor textarea {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 0 8px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 11.5px/1.5 var(--mono);
+  tab-size: 2;
+  resize: vertical;
+}
+.editor textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--focus);
+}
+.editor .error {
+  margin: 6px 8px;
+  color: var(--danger);
+}
+
 .code {
   margin: 0;
   padding: 6px 8px;
