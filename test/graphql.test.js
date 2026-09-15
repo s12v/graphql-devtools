@@ -68,3 +68,57 @@ test('describe and label', () => {
   assert.equal(graphql.label({ name: null, fields: ['a', 'b'] }), '{ a, … }');
   assert.equal(graphql.label({ name: null, fields: [] }), '');
 });
+
+test('print: a minified document becomes the usual layout', () => {
+  assert.equal(graphql.print('query AppQuery($id:ID!){node(id:$id){__typename ...on User{name repositories(first:5){edges{node{id name}}}}id}}'), [
+    'query AppQuery($id: ID!) {',
+    '  node(id: $id) {',
+    '    __typename',
+    '    ... on User {',
+    '      name',
+    '      repositories(first: 5) {',
+    '        edges {',
+    '          node {',
+    '            id',
+    '            name',
+    '          }',
+    '        }',
+    '      }',
+    '    }',
+    '    id',
+    '  }',
+    '}',
+  ].join('\n'));
+  assert.equal(graphql.print('{a b{c}d}'), '{\n  a\n  b {\n    c\n  }\n  d\n}');
+  assert.equal(graphql.print('query($a:Int){b(x:$a)}'), 'query ($a: Int) {\n  b(x: $a)\n}');
+});
+
+test('print: arguments, values, defaults, directives, aliases, spreads, comments', () => {
+  assert.equal(graphql.print('query Q($a: Int = 1, $b: [String!]! = ["x", "y"]) { alias: field(arg: {a: 1, b: [1, 2], c: {d: ENUM, e: null}}, other: [{x: 1}, {x: 2}]) @include(if: $a) @skip(if: false) { x } ... on T { y } ...F }\n# trailing\nfragment F on T { z }'), [
+    'query Q($a: Int = 1, $b: [String!]! = ["x", "y"]) {',
+    '  alias: field(arg: {a: 1, b: [1, 2], c: {d: ENUM, e: null}}, other: [{x: 1}, {x: 2}]) @include(if: $a) @skip(if: false) {',
+    '    x',
+    '  }',
+    '  ... on T {',
+    '    y',
+    '  }',
+    '  ...F',
+    '}',
+    '# trailing',
+    '',
+    'fragment F on T {',
+    '  z',
+    '}',
+  ].join('\n'));
+  assert.equal(graphql.print('mutation M { like(input: {id: "x", n: -1.5e3, ok: true}) { ok } }'), 'mutation M {\n  like(input: {id: "x", n: -1.5e3, ok: true}) {\n    ok\n  }\n}');
+  assert.equal(graphql.print('{ b(x: """multi\nline""") }'), '{\n  b(x: """multi\nline""")\n}');
+});
+
+test('print is idempotent and survives garbage', () => {
+  for (const src of ['query A { a } query B { b }', 'subscription S($r: ID!) { m(room: $r) { id } }', 'not graphql { ok', '', '{']) {
+    const once = graphql.print(src);
+    assert.equal(graphql.print(once), once, src);
+  }
+  assert.equal(graphql.print('query A { a } query B { b }'), 'query A {\n  a\n}\n\nquery B {\n  b\n}');
+  assert.equal(graphql.print(''), '');
+});
