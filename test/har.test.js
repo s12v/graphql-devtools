@@ -187,3 +187,58 @@ test('copy as cURL', () => {
   assert.equal(har.headerLines([{ name: 'a', value: '1' }, { name: 'b', value: '2' }]), 'a: 1\nb: 2');
   assert.equal(har.headerLines(undefined), '');
 });
+
+test('a "query" that is not a GraphQL document is not GraphQL', () => {
+  assert.deepEqual(ops(entry({ url: 'https://example.com/search?query=hello%20world' })), []);
+  assert.deepEqual(ops(entry({ url: 'https://example.com/api?query=hello&variables=1' })), []);
+  assert.deepEqual(ops(entry({ body: { query: 'hello' } })), []);
+  assert.deepEqual(ops(entry({ body: { query: '' } })), []);
+  assert.deepEqual(ops(entry({ body: 'query=hello', mime: 'application/x-www-form-urlencoded' })), []);
+  // a hash where the document should be is a persisted query (GitHub's web client)
+  const gh = ops(entry({ body: { persistedQueryName: 'OpenClosedTabsQuery', query: '9b5335baab0566640cfa28c329582507', variables: { owner: 's12v' } } }))[0];
+  assert.equal(gh.documentId, '9b5335baab0566640cfa28c329582507');
+  assert.equal(gh.query, null);
+  assert.equal(gh.label, 'OpenClosedTabsQuery');
+  // the same hash with a real document beside it is a document
+  assert.equal(ops(entry({ body: { query: '{ a }', extensions: { persistedQuery: { sha256Hash: 'ab' } } } }))[0].query, '{ a }');
+});
+
+test('GitHub: the JSON body in a ?body= parameter', () => {
+  const url = 'https://github.com/_graphql?body=' + encodeURIComponent(JSON.stringify({ persistedQueryName: 'OpenClosedTabsQuery', query: '9b5335baab0566640cfa28c329582507', variables: { name: 'graphql-devtools' } }));
+  const [op] = ops(entry({ url }));
+  assert.equal(op.label, 'OpenClosedTabsQuery');
+  assert.deepEqual(op.variables, { name: 'graphql-devtools' });
+  assert.deepEqual(ops(entry({ url: 'https://example.com/x?body=' + encodeURIComponent('{"a":1}') })), []);
+  assert.deepEqual(ops(entry({ url: 'https://example.com/x?body=plain' })), []);
+});
+
+test('X / Twitter: query id and operation name in the path, variables in the URL', () => {
+  const [op] = ops(entry({ url: 'https://x.com/i/api/graphql/E3opETHurmVJflFsUBVuUQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22github%22%7D&features=%7B%7D' }));
+  assert.equal(op.documentId, 'E3opETHurmVJflFsUBVuUQ');
+  assert.equal(op.label, 'UserByScreenName');
+  assert.deepEqual(op.variables, { screen_name: 'github' });
+  assert.deepEqual(ops(entry({ url: 'https://x.com/i/api/graphql/E3opETHurmVJflFsUBVuUQ/UserByScreenName' })), [], 'no variables: not a request we understand');
+  assert.deepEqual(ops(entry({ url: 'https://example.com/docs/graphql/intro/Basics?variables=x' })), [], 'a short id is a doc path');
+});
+
+test('withQuery: a learned document names and types a persisted row', () => {
+  const [op] = ops(entry({ body: { operationName: 'Feed', variables: { first: 10 }, extensions: { persistedQuery: { version: 1, sha256Hash: 'abc' } } } }));
+  assert.equal(op.type, '');
+  const full = har.withQuery(op, 'query Feed($first: Int) { feed(first: $first) { id } }');
+  assert.equal(full.query, 'query Feed($first: Int) { feed(first: $first) { id } }');
+  assert.equal(full.type, 'query');
+  assert.equal(full.label, 'Feed');
+  assert.equal(full.learned, true);
+  assert.equal(full.persisted, 'abc');
+  assert.equal(op.query, null, 'the original is untouched');
+  const hashOnly = ops(entry({ body: { extensions: { persistedQuery: { sha256Hash: 'abc' } } } }))[0];
+  assert.equal(har.withQuery(hashOnly, 'mutation { like { ok } }').label, '{ like }');
+});
+
+test('timings and Server-Timing', () => {
+  assert.equal(har.timings({ timings: { blocked: 1.2, dns: -1, connect: -1, ssl: -1, send: 0.1, wait: 210.4, receive: 12 } }), 'blocked 1 ms · send 0 ms · wait 210 ms · receive 12 ms');
+  assert.equal(har.timings({ timings: { wait: 0, receive: 0 } }), 'wait 0 ms · receive 0 ms');
+  assert.equal(har.timings({}), '');
+  assert.equal(har.serverTiming([{ name: 'Server-Timing', value: 'db;dur=53, app;desc="render";dur=47.2, cache;desc=hit' }]), 'db 53 ms · app (render) 47 ms · cache (hit)');
+  assert.equal(har.serverTiming([]), '');
+});
