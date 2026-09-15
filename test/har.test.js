@@ -251,18 +251,21 @@ test('replay: the request as a fetch the page can make again', () => {
   assert.equal(r.method, 'POST');
   assert.deepEqual(r.headers, { 'Content-Type': 'application/json', Authorization: 'Bearer t', 'X-Client': 'web' });
   assert.equal(r.body, '{"query":"{ me { id } }"}');
+  assert.equal(r.credentials, 'include', 'the recorded request carried a cookie');
   assert.equal(har.replay(e, '{"query":"{ you }"}').body, '{"query":"{ you }"}');
+  assert.equal(har.replay(entry({ body: { query: '{ a }' } })).credentials, 'same-origin', 'no cookie: "include" would fail CORS on a * origin');
   const get = har.replay(entry({ url: 'https://x.io/g?query=%7Ba%7D' }));
   assert.equal(get.method, 'GET');
   assert.equal(get.body, null);
   const code = har.replayCode(r);
-  assert.match(code, /^\(function \(r\) \{ fetch\(r\.url, \{ method: r\.method, headers: r\.headers, body: r\.body, credentials: "include" \}\)/);
+  assert.match(code, /^\(function \(r\) \{ fetch\(r\.url, \{ method: r\.method, headers: r\.headers, body: r\.body, credentials: r\.credentials \}\)/);
   assert.ok(code.endsWith(')'));
   // the code parses and carries the spec
   const seen = [];
   new Function('fetch', code)((url, init) => { seen.push([url, init]); return Promise.reject(); });
   assert.equal(seen[0][0], r.url);
   assert.equal(seen[0][1].body, r.body);
+  assert.equal(seen[0][1].credentials, 'include');
 });
 
 test('editedBody: the JSON body with the document and variables replaced', () => {
