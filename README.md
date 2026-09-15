@@ -30,13 +30,18 @@ is signed on addons.mozilla.org).
 * **Query** tab: the document with syntax colours — pretty-printed when the client sent it minified (Relay,
   urql, gql.tada…), **as sent** on request — with the variables and the extensions under it. A persisted query
   whose document was seen in another request with the same hash (Apollo's APQ retry) shows that document.
+* **Resend** sends the same request again from the page — with its cookies and headers — and the answer
+  arrives as a new row marked ↻; **Edit & resend** lets you change the document or the variables first
+  (a mutation asks twice).
 * **Response** tab: the pretty-printed response, with the error messages on top.
 * **Headers** tab: URL, method, status, timing phases (wait / receive…), `Server-Timing`, request and response
   headers, **Copy as cURL**.
 * Every block has a **Copy** button; queries and JSON fold — a triangle on every multi-line bracket, a
   collapsed one shows `{ … 3 keys }`, **−** / **+** collapse or expand the whole view.
-* Filter by name, URL or variables, by operation type, or **Errors** only; **Clear**; **Preserve log** across
-  navigations; arrow keys move the selection; Cmd/Ctrl+F focuses the filter.
+* Filter by name, URL or variables, by operation type, or **Errors** only; **Group** folds repeated operations
+  into one row with a count, the errors, the total size and the average time — the quickest way to spot an
+  N+1; **Clear**; **Preserve log** across navigations; arrow keys move the selection; Cmd/Ctrl+F focuses the
+  filter.
 * Requests recorded since DevTools was opened appear when the panel is first shown.
 * Follows the DevTools theme, light or dark.
 

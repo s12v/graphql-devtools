@@ -16,6 +16,7 @@
   var gutterEl = $("gutter");
   var typeEl = $("type");
   var errorsEl = $("errors");
+  var groupEl = $("group");
   var headers = Array.prototype.slice.call(document.querySelectorAll("#table th[data-sort]"));
   var panes = { query : $("pane-query"), response : $("pane-response"), headers : $("pane-headers") };
   var tabButtons = Array.prototype.slice.call(document.querySelectorAll("#details-tabs .tab"));
@@ -41,6 +42,10 @@
   var typeFilter = "";
   var onlyErrors = false;
   var sort = { key : null, dir : 1 };
+  var grouped = remember("grouped") == "1";
+  var groupEls = {};      // group key → its <tr>, in grouped mode
+  var expanded = {};      // group key → true when its members are shown
+  var pending = [];       // requests this panel asked the page to send, waiting to show up
 
   /* ---- theme: DevTools' own, then the OS ---- */
 
@@ -82,6 +87,16 @@
       return op;
     });
 
+    var mine = null;
+    for (var i = 0; i < pending.length; i++) {
+      var p = pending[i];
+      var body = entry.request.postData && typeof entry.request.postData.text == "string" ? entry.request.postData.text : null;
+      if (p.url == entry.request.url && p.body == body && Date.parse(entry.startedDateTime) >= p.at - 2000) {
+        mine = pending.splice(i, 1)[0];
+        break;
+      }
+    }
+
     var group = { entry : entry, text : null, loaded : false, rows : [] };
     ops.forEach(function (op) {
       var row = {
@@ -93,15 +108,18 @@
         time : entry.time,
         url : entry.request.url,
         res : null,
-        tr : null
+        tr : null,
+        resent : mine !== null
       };
       rows.push(row);
       group.rows.push(row);
       render(row);
     });
     load(group);
-    if (sort.key) applySort();
+    if (grouped && mine) expanded[groupKey(group.rows[0])] = true;
+    if (sort.key || grouped) layout();
     update();
+    if (mine) select(group.rows[Math.min(mine.index || 0, group.rows.length - 1)]);
   }
 
   /* rows listed earlier with only this hash get the document too */
@@ -134,6 +152,7 @@
         render(row);
       });
       if (selected && selected.group === group) showDetails(selected);
+      if (grouped) layout();
       update();
     });
   }
@@ -173,16 +192,24 @@
       n.textContent = " " + (op.index + 1) + "/" + row.group.rows.length;
       name.appendChild(n);
     }
+    if (row.resent) {
+      var mark = document.createElement("span");
+      mark.className = "muted";
+      mark.title = "sent again from this panel";
+      mark.textContent = " \u21bb";
+      name.appendChild(mark);
+    }
     cell(tr, op.type ? "" : "muted", op.type || (op.persisted || op.documentId ? "persisted" : ""));
     cell(tr, "", statusText(row), row.entry.response && row.entry.response.statusText || "");
     cell(tr, "num", row.size === null ? "" : format.bytes(row.size), row.size === null ? "" : row.size + " bytes");
     cell(tr, "num", format.ms(row.time), har.timings(row.entry));
     cell(tr, "muted", format.path(row.url), row.url);
-    tr.classList.toggle("error", row.status >= 400 || !row.status || !!(row.res && row.res.errors));
+    tr.classList.toggle("error", failed(row));
     tr.classList.toggle("selected", row === selected);
-    tr.hidden = !matches(row);
+    if (!grouped) tr.hidden = !matches(row);
     if (!row.tr) {
       row.tr = tr;
+      tr.row = row;
       tr.addEventListener("click", function () { select(row); });
       rowsEl.appendChild(tr);
     }
@@ -220,20 +247,133 @@
     });
   }
 
-  function applySort() {
-    order().forEach(function (row) { rowsEl.appendChild(row.tr); });
+  /* Arranges the table: rows in display order, hidden by the filters — or, grouped, one row per
+     distinct operation with its members under it */
+  function layout() {
     headers.forEach(function (th) {
       th.classList.toggle("sort-asc", th.getAttribute("data-sort") == sort.key && sort.dir > 0);
       th.classList.toggle("sort-desc", th.getAttribute("data-sort") == sort.key && sort.dir < 0);
     });
+    if (!grouped) {
+      Object.keys(groupEls).forEach(function (k) { groupEls[k].remove(); });
+      groupEls = {};
+      order().forEach(function (row) {
+        row.tr.hidden = !matches(row);
+        row.tr.classList.remove("member");
+        rowsEl.appendChild(row.tr);
+      });
+      return;
+    }
+    var groups = [];
+    var byKey = {};
+    order().forEach(function (row) {
+      if (!matches(row)) {
+        row.tr.hidden = true;
+        return;
+      }
+      var k = groupKey(row);
+      if (!byKey[k]) {
+        byKey[k] = { key : k, rows : [] };
+        groups.push(byKey[k]);
+      }
+      byKey[k].rows.push(row);
+    });
+    if (sort.key) {
+      // groups sort by their totals: errors, size in total, average time
+      var key = sort.key;
+      groups.forEach(function (g) { g.agg = aggregate(g); });
+      groups.sort(function (a, b) {
+        var x = groupValue(a, key), y = groupValue(b, key);
+        return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
+      });
+    }
+    var used = {};
+    groups.forEach(function (g) {
+      var tr = renderGroup(g);
+      used[g.key] = true;
+      rowsEl.appendChild(tr);
+      g.rows.forEach(function (row) {
+        row.tr.hidden = !expanded[g.key];
+        row.tr.classList.add("member");
+        rowsEl.appendChild(row.tr);
+      });
+    });
+    Object.keys(groupEls).forEach(function (k) {
+      if (!used[k]) {
+        groupEls[k].remove();
+        delete groupEls[k];
+      }
+    });
   }
 
+  function groupKey(row) {
+    return [row.op.label, row.op.type, row.url.split("?")[0]].join("\n");
+  }
+
+  function aggregate(g) {
+    var a = { errors : 0, size : 0, time : 0, timed : 0, statuses : {} };
+    g.rows.forEach(function (row) {
+      if (failed(row)) a.errors++;
+      if (row.size !== null) a.size += row.size;
+      if (typeof row.time == "number" && row.time > 0) { a.time += row.time; a.timed++; }
+      a.statuses[row.status || 0] = true;
+    });
+    return a;
+  }
+
+  function groupValue(g, key) {
+    var first = g.rows[0];
+    switch (key) {
+      case "name": return (first.op.label || "").toLowerCase();
+      case "type": return first.op.type || "persisted";
+      case "status": return g.agg.errors;
+      case "size": return g.agg.size;
+      case "time": return g.agg.timed ? g.agg.time / g.agg.timed : -1;
+      default: return first.url;
+    }
+  }
+
+  /* "▸ Viewer ×12 · query · 2 errors · Σ size · avg time · URL" */
+  function renderGroup(g) {
+    var tr = groupEls[g.key] || document.createElement("tr");
+    tr.innerHTML = "";
+    tr.className = "group" + (expanded[g.key] ? " expanded" : "");
+    var first = g.rows[0];
+    var a = g.agg || aggregate(g);
+    var errors = a.errors, size = a.size, time = a.time, timed = a.timed, statuses = a.statuses;
+    var name = cell(tr, "", "", first.op.query || first.op.persisted || first.op.documentId || "");
+    var arrow = document.createElement("span");
+    arrow.className = "arrow";
+    name.appendChild(arrow);
+    name.appendChild(document.createTextNode(first.op.label || "\u2014"));
+    var count = document.createElement("span");
+    count.className = "muted";
+    count.textContent = " \u00d7" + g.rows.length;
+    name.appendChild(count);
+    cell(tr, first.op.type ? "" : "muted", first.op.type || (first.op.persisted || first.op.documentId ? "persisted" : ""));
+    var codes = Object.keys(statuses);
+    cell(tr, "", errors ? errors + (errors == 1 ? " error" : " errors") : codes.length == 1 ? (codes[0] == "0" ? "(failed)" : codes[0]) : "mixed");
+    cell(tr, "num", size ? format.bytes(size) : "", size + " bytes in total");
+    cell(tr, "num", timed ? format.ms(time / timed) : "", "average \u00b7 " + format.ms(time) + " in total");
+    cell(tr, "muted", format.path(first.url), first.url);
+    tr.classList.toggle("error", errors > 0);
+    if (!groupEls[g.key]) {
+      groupEls[g.key] = tr;
+      tr.addEventListener("click", function () {
+        expanded[g.key] = !expanded[g.key];
+        layout();
+      });
+    }
+    return tr;
+  }
+
+  /* rows the user can step through: shown, in table order */
   function visible() {
-    return order().filter(matches);
+    return Array.prototype.map.call(rowsEl.querySelectorAll("tr:not([hidden]):not(.group)"), function (tr) { return tr.row; });
   }
 
   function refilter() {
-    rows.forEach(function (row) { row.tr.hidden = !matches(row); });
+    layout();
     update();
   }
 
@@ -244,7 +384,7 @@
       countEl.textContent = "";
       return;
     }
-    var shown = visible();
+    var shown = rows.filter(matches);
     var errors = 0, size = 0, time = 0;
     shown.forEach(function (row) {
       if (failed(row)) errors++;
@@ -262,6 +402,7 @@
   function clear() {
     rows = [];
     seen = {};
+    groupEls = {};
     rowsEl.innerHTML = "";
     select(null);
     update();
@@ -404,6 +545,7 @@
     var op = row.op;
     var q = panes.query;
     q.innerHTML = "";
+    q.appendChild(actions(row));
     if (op.query !== null) {
       var printed = graphql.print(op.query);
       var tidy = printed == op.query.trim();       // nothing to prettify
@@ -434,6 +576,125 @@
       var ext = json.pretty(op.extensions);
       q.appendChild(section("Extensions", "", view("json", ext), ext));
     }
+  }
+
+  /* ---- Resend / Edit & resend: the page makes the request again; the answer arrives as a new row ---- */
+
+  function actions(row) {
+    var op = row.op;
+    var bar = document.createElement("div");
+    bar.className = "actions";
+    var resendButton = document.createElement("button");
+    resendButton.type = "button";
+    resendButton.className = "copy";
+    resendButton.textContent = "Resend";
+    resendButton.title = "Send the same request again from the page";
+    var armed = null;
+    resendButton.addEventListener("click", function () {
+      // a mutation changes things: ask twice
+      if (op.type == "mutation" && !armed) {
+        resendButton.textContent = "Resend the mutation?";
+        resendButton.classList.add("danger");
+        armed = setTimeout(function () {
+          armed = null;
+          resendButton.textContent = "Resend";
+          resendButton.classList.remove("danger");
+        }, 4000);
+        return;
+      }
+      if (armed) clearTimeout(armed);
+      resend(row, undefined, bar);
+      resendButton.textContent = "Resend";
+      resendButton.classList.remove("danger");
+    });
+    bar.appendChild(resendButton);
+    if (har.editedBody(row.entry, op, op.query, op.variables) !== null) {
+      var editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "copy";
+      editButton.textContent = "Edit & resend";
+      editButton.title = "Change the document or the variables and send";
+      editButton.addEventListener("click", function () { editor(row); });
+      bar.appendChild(editButton);
+    }
+    var note = document.createElement("span");
+    note.className = "note";
+    bar.appendChild(note);
+    return bar;
+  }
+
+  function resend(row, body, bar) {
+    var spec = har.replay(row.entry, body);
+    pending.push({ url : spec.url, body : spec.body, at : Date.now(), index : row.op.index });
+    var note = bar && bar.querySelector(".note");
+    var say = function (text) { if (note) note.textContent = text; };
+    if (devtools && devtools.inspectedWindow && devtools.inspectedWindow.eval) {
+      devtools.inspectedWindow.eval(har.replayCode(spec), function (result, exception) {
+        if (exception) say("could not send: " + (exception.value || exception.description || exception.code || "error"));
+        else say("sent \u2014 the answer appears as a new row");
+      });
+    } else {
+      // no page to ask (the demo): pretend the same answer came back
+      say("sent \u2014 the answer appears as a new row");
+      setTimeout(function () { simulate(row, spec); }, 200);
+    }
+  }
+
+  function simulate(row, spec) {
+    var e = row.entry;
+    var copy = JSON.parse(JSON.stringify({ startedDateTime : new Date().toISOString(), time : e.time, request : e.request, response : e.response, timings : e.timings }));
+    copy.time = Math.round(e.time * (0.8 + Math.random() * 0.4) * 10) / 10;
+    if (spec.body !== null && copy.request.postData) copy.request.postData.text = spec.body;
+    copy.getContent = function (cb) { cb(row.group.text || "", undefined); };
+    add(copy);
+  }
+
+  /* the Query pane as a form: the document and the variables, Send and Cancel */
+  function editor(row) {
+    var op = row.op;
+    var q = panes.query;
+    q.innerHTML = "";
+    var form = document.createElement("div");
+    form.className = "editor";
+    form.innerHTML = '<div class="section-head"><span>Edit &amp; resend</span>'
+      + '<span class="note">' + (op.type == "mutation" ? "a mutation \u2014 it will run again" : "") + "</span>"
+      + '<span class="buttons"><button type="button" class="copy send">Send</button><button type="button" class="copy cancel">Cancel</button></span></div>'
+      + (op.query !== null
+        ? '<label>Query</label><textarea class="edit-query" spellcheck="false"></textarea>'
+        : '<div class="hint">A persisted query: the document stays on the server, only the variables can change.</div>')
+      + '<label>Variables (JSON)</label><textarea class="edit-vars" spellcheck="false"></textarea>'
+      + '<div class="error" hidden></div>';
+    var queryEl = form.querySelector(".edit-query");
+    var varsEl = form.querySelector(".edit-vars");
+    var errorEl = form.querySelector(".error");
+    var size = function (el) { el.rows = Math.min(30, Math.max(3, el.value.split("\n").length + 1)); };
+    if (queryEl) {
+      queryEl.value = pretty ? graphql.print(op.query) : op.query;
+      size(queryEl);
+    }
+    varsEl.value = json.pretty(op.variables);
+    size(varsEl);
+    var send = function () {
+      var vars = json.parse(varsEl.value.trim() === "" ? "{}" : varsEl.value);
+      if (vars === undefined) {
+        errorEl.textContent = "Variables are not valid JSON";
+        errorEl.hidden = false;
+        varsEl.focus();
+        return;
+      }
+      var body = har.editedBody(row.entry, op, queryEl ? queryEl.value : null, vars);
+      renderQuery(row);
+      resend(row, body, q.querySelector(".actions"));
+    };
+    form.querySelector(".send").addEventListener("click", send);
+    form.querySelector(".cancel").addEventListener("click", function () { renderQuery(row); });
+    form.addEventListener("keydown", function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key == "Enter") { send(); e.preventDefault(); }
+      if (e.key == "Escape") { renderQuery(row); e.preventDefault(); }
+    });
+    [queryEl, varsEl].forEach(function (el) { if (el) el.addEventListener("input", function () { size(el); }); });
+    q.appendChild(form);
+    (queryEl || varsEl).focus();
   }
 
   function renderResponse(row) {
@@ -538,8 +799,17 @@
       if (sort.key != k) sort = { key : k, dir : 1 };
       else if (sort.dir > 0) sort.dir = -1;
       else sort = { key : null, dir : 1 };
-      applySort();
+      layout();
     });
+  });
+
+  groupEl.classList.toggle("on", grouped);
+  groupEl.addEventListener("click", function () {
+    grouped = !grouped;
+    remember("grouped", grouped ? "1" : "0");
+    groupEl.classList.toggle("on", grouped);
+    if (grouped && selected) expanded[groupKey(selected)] = true;
+    layout();
   });
 
   preserveEl.checked = remember("preserve") == "1";
