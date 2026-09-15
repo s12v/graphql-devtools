@@ -1,6 +1,6 @@
 {
   "name": "graphql-devtools",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "A GraphQL panel in Chrome DevTools: every operation the page sends, with its variables, response, errors and headers",
   "license": "MIT",
