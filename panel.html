@@ -12,6 +12,15 @@
   </button>
   <span class="sep"></span>
   <input id="filter" type="search" placeholder="Filter by name, URL or variables" spellcheck="false" autocomplete="off">
+  <select id="type" title="Operation type">
+    <option value="">All types</option>
+    <option value="query">query</option>
+    <option value="mutation">mutation</option>
+    <option value="subscription">subscription</option>
+    <option value="persisted">persisted</option>
+  </select>
+  <button type="button" id="errors" class="toggle-button" title="Only requests with an HTTP error or GraphQL errors">Errors</button>
+  <span class="sep"></span>
   <label class="check"><input type="checkbox" id="preserve"> Preserve log</label>
   <span id="count"></span>
 </div>
@@ -22,7 +31,7 @@
         <col class="c-name"><col class="c-type"><col class="c-status"><col class="c-size"><col class="c-time"><col class="c-url">
       </colgroup>
       <thead>
-        <tr><th>Name</th><th>Type</th><th>Status</th><th>Size</th><th>Time</th><th>URL</th></tr>
+        <tr><th data-sort="name">Name</th><th data-sort="type">Type</th><th data-sort="status">Status</th><th data-sort="size">Size</th><th data-sort="time">Time</th><th data-sort="url">URL</th></tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>

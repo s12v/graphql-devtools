@@ -25,22 +25,26 @@ is signed on addons.mozilla.org).
 ## What it shows
 
 * One row per operation: name (the operation name, or the first field of an anonymous query), type
-  (query / mutation / subscription), HTTP status with the number of GraphQL `errors`, size, time, URL.
-  Rows with an HTTP error or GraphQL errors are red.
-* **Query** tab: the document with syntax colours, the variables and the extensions under it.
+  (query / mutation / subscription / persisted), HTTP status with the number of GraphQL `errors`, size, time, URL.
+  Rows with an HTTP error or GraphQL errors are red. Click a column to sort; the counter sums the rows in view.
+* **Query** tab: the document with syntax colours — pretty-printed when the client sent it minified (Relay,
+  urql, gql.tada…), **as sent** on request — with the variables and the extensions under it. A persisted query
+  whose document was seen in another request with the same hash (Apollo's APQ retry) shows that document.
 * **Response** tab: the pretty-printed response, with the error messages on top.
-* **Headers** tab: URL, method, status, timing, request and response headers, **Copy as cURL**.
+* **Headers** tab: URL, method, status, timing phases (wait / receive…), `Server-Timing`, request and response
+  headers, **Copy as cURL**.
 * Every block has a **Copy** button; queries and JSON fold — a triangle on every multi-line bracket, a
   collapsed one shows `{ … 3 keys }`, **−** / **+** collapse or expand the whole view.
-* Filter by name, URL or variables; **Clear**; **Preserve log** across navigations; arrow keys move
-  the selection; Cmd/Ctrl+F focuses the filter.
+* Filter by name, URL or variables, by operation type, or **Errors** only; **Clear**; **Preserve log** across
+  navigations; arrow keys move the selection; Cmd/Ctrl+F focuses the filter.
 * Requests recorded since DevTools was opened appear when the panel is first shown.
 * Follows the DevTools theme, light or dark.
 
 Recognised request shapes: a JSON body with `query` (whatever the `Content-Type`), a batch (JSON array),
 `GET` with the query in the URL, `application/graphql`, form-encoded and multipart uploads
-(`operations` field), and persisted queries — Apollo's `extensions.persistedQuery.sha256Hash` or a
-Relay-style document id — which are listed by their operation name.
+(`operations` field), and persisted queries — Apollo's `extensions.persistedQuery.sha256Hash`, Relay and
+Facebook document ids, GitHub's `?body=` with a hash, X's `/graphql/<id>/<Name>` — listed by their operation
+name. A `query` that is not a GraphQL document (a site's search parameter, say) is left alone.
 
 ## Privacy
 
