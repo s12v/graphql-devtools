@@ -40,7 +40,9 @@ test('operationName picks the operation of a multi-operation document', () => {
 
 test('anonymous operations are labelled by their first field', () => {
   assert.equal(ops(entry({ body: { query: '{ viewer { id } }' } }))[0].label, '{ viewer }');
-  assert.equal(ops(entry({ body: { query: '{ a { id } b }' } }))[0].label, '{ a, … }');
+  assert.equal(ops(entry({ body: { query: '{ a { id } b }' } }))[0].label, '{ a, b }');
+  // operations merged by aliasing under one root: every root field in the name
+  assert.equal(ops(entry({ body: { query: 'query { operation1: users { id } operation2: posts { id } operation3: viewer { id } operation4: me { id } }' } }))[0].label, '{ users, posts, viewer, +1 }');
   assert.equal(ops(entry({ body: { query: 'mutation { like(id: 1) { ok } }' } }))[0].type, 'mutation');
 });
 

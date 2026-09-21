@@ -24,7 +24,7 @@ is signed on addons.mozilla.org).
 
 ## What it shows
 
-* One row per operation: name (the operation name, or the first field of an anonymous query), type
+* One row per operation: name (the operation name, or the root fields of an anonymous query), type
   (query / mutation / subscription / persisted), HTTP status with the number of GraphQL `errors`, size, time, URL.
   Rows with an HTTP error or GraphQL errors are red. Click a column to sort; the counter sums the rows in view.
 * **Query** tab: the document with syntax colours — pretty-printed when the client sent it minified (Relay,
