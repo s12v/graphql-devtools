@@ -65,7 +65,9 @@ test('describe and label', () => {
   assert.deepEqual(graphql.describe('garbage'), { type: '', name: null, fields: [], multiple: false });
   assert.equal(graphql.label({ name: 'X', fields: [] }), 'X');
   assert.equal(graphql.label({ name: null, fields: ['a'] }), '{ a }');
-  assert.equal(graphql.label({ name: null, fields: ['a', 'b'] }), '{ a, … }');
+  assert.equal(graphql.label({ name: null, fields: ['a', 'b'] }), '{ a, b }');
+  assert.equal(graphql.label({ name: null, fields: ['a', 'b', 'c'] }), '{ a, b, c }');
+  assert.equal(graphql.label({ name: null, fields: ['a', 'b', 'c', 'd', 'e'] }), '{ a, b, c, +2 }');
   assert.equal(graphql.label({ name: null, fields: [] }), '');
 });
 
